@@ -2,15 +2,21 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include "TRandom3.h"
-#include "TMath.h"
-#include "TGraph.h"
+#include <sstream>
+#include <TRandom3.h>
+#include <TMath.h>
+#include <TGraph.h>
+#include <TCanvas.h>
 
 using namespace std;
 
 kMeansWeights::kMeansWeights(Int_t k)
 {
   fK = k;
+  ostringstream convert;   // stream used for the conversion
+  convert << fK;      // insert the textual representation of 'Number' in the characters in the stream
+  fKname = TString(convert.str()); // set 'Result' to the contents of the stream
+
   readFromFiles();
 
 }
@@ -161,6 +167,8 @@ void kMeansWeights::fit()
 void kMeansWeights::ScatterPlot()
 {
 
+  TCanvas* c = new TCanvas("kmeans"+fKname, "kmeans"+fKname, 800, 800);
+  c->cd();
   std::vector<TGraph*> graphs; graphs.clear();
   for(int igr=0; igr<fK; ++igr)
     {
@@ -171,5 +179,7 @@ void kMeansWeights::ScatterPlot()
       igr==0 ? graphs[igr]->Draw("AP") : graphs[igr]->Draw("PSAME");
       
     }
+  c->Print("kmeans"+fKname+".png");
+  c->Print("kmeans"+fKname+".pdf");
 
 }

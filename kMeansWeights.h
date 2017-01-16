@@ -1,6 +1,9 @@
 #ifndef KMEANSWEIGHTS_H
 #define KMEANSWEIGHTS_H
 
+// Forward declarations
+#include <TString.h> 
+
 class kMeansWeights
 {
  public: 
@@ -10,7 +13,8 @@ class kMeansWeights
   void ScatterPlot();
 
  protected:
-  Int_t      fK;     // numer of clusters
+  Int_t      fK;     // number of clusters
+  TString     fKname; // number of clusters (string)
   Double_t*  fMx;    // centroid position X
   Double_t*  fMy;    // centroid position Y
   vector<Double_t>  fX;     // data component X

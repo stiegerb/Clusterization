@@ -161,14 +161,15 @@ void kMeansWeights::fit()
 void kMeansWeights::ScatterPlot()
 {
 
-  TGraph* gr1 = new TGraph( fDataX[0].size(), &fDataX[0][0], &fDataY[0][0]);
-  TGraph* gr2 = new TGraph( fDataX[1].size(), &fDataX[1][0], &fDataY[1][0]);
-  gr1->SetMarkerColor(kBlue);
-  gr2->SetMarkerColor(kRed);
-  gr1->SetMarkerStyle(kFullCircle);
-  gr2->SetMarkerStyle(kFullCircle);
-  
-  gr1->Draw("AP");
-  gr2->Draw("PSAME");
+  std::vector<TGraph*> graphs; graphs.clear();
+  for(int igr=0; igr<fK; ++igr)
+    {
+      graphs.push_back(new TGraph( fDataX[igr].size(), &fDataX[igr][0], &fDataY[igr][0] ));
+      graphs[igr]->SetMarkerColor(igr+1);    
+      graphs[igr]->SetMarkerStyle(kFullCircle);
+      
+      igr==0 ? graphs[igr]->Draw("AP") : graphs[igr]->Draw("PSAME");
+      
+    }
 
 }

@@ -5,6 +5,9 @@
 #include "TRandom3.h"
 #include "TMath.h"
 #include "TGraph.h"
+#include "TH1.h"
+#include "THStack.h"
+#include "TCanvas.h"
 
 using namespace std;
 
@@ -19,16 +22,67 @@ void kMeansWeights::readFromFiles()
 {
   
   fN = 0;
-  ifstream f; f.open("data/ttbartest.txt");
+  ifstream f; f.open("data/ttbar2.txt");
+  Int_t count = 0;
   while (f){
     Double_t x = 0; Double_t y = 0; Double_t w = 0;
     f >> x >> y >> w;
-    fX.push_back(x);
-    fY.push_back(y);
-    fW.push_back(w);
-    fN ++;
+    if ( TMath::Abs(x) > 80. ) continue;
+    if ( TMath::Abs(y) > 80. ) continue;
+    if (count%2 == 0){
+      fX.push_back(x);
+      fY.push_back(y);
+      fW.push_back(w);
+      cout << x << " "  << y << " " << w  << endl;
+      fN ++;
+    }
+    else{
+      fTTbarX.push_back(x);
+      fTTbarY.push_back(y);
+      fTTbarW.push_back(w);
+    }
+    count++;
   }
   f.close();
+  
+  f.open("data/tth.txt");
+  while (f){
+    Double_t x = 0; Double_t y = 0; Double_t w = 0;
+    f >> x >> y >> w;
+    if (count%2 == 0){
+      fX.push_back(x);
+      fY.push_back(y);
+      fW.push_back(w);
+      fN ++;
+    }
+    else{
+      fTTHX.push_back(x);
+      fTTHY.push_back(y);
+      fTTHW.push_back(w);
+    }
+    count++;
+  }
+  f.close();
+  
+  f.open("data/ttw.txt");
+  while (f){
+    Double_t x = 0; Double_t y = 0; Double_t w = 0;
+    f >> x >> y >> w;
+    if (count%2 == 0){
+      fX.push_back(x);
+      fY.push_back(y);
+      fW.push_back(w);
+      fN ++;
+    }
+    else{
+      fTTWX.push_back(x);
+      fTTWY.push_back(y);
+      fTTWW.push_back(w);
+    }
+    count++;
+  }
+  f.close();
+
 
 
 }
@@ -58,8 +112,6 @@ void kMeansWeights::MakeAssignment()
     Double_t dist = 10000;
     for (int k = 0; k < fK; ++k){
       Double_t dst = d( fX[n], fY[n], fMx[k], fMy[k]);
-      //      cout << "A" << fX[k] << " " <<  fY[k] << " " <<  fMx[k] << " " <<  fMy[k] << endl;
-      // cout << "B" << k << " " << dist<< " " << dst << endl;
       if (dst < dist){
 	cluster = k;
 	dist = dst;
@@ -93,6 +145,7 @@ Int_t kMeansWeights::CalculateCentroids()
   Double_t di = 0;
   
   for (int k = 0; k < fK; ++k){
+    cout << fMx[k] << " " << fMy[k] << endl; 
     fMx[k] /= fMWght[k];
     fMy[k] /= fMWght[k];
     di += d(fMx[k],fMy[k], fOldMx[k], fOldMy[k]);
@@ -113,9 +166,6 @@ void kMeansWeights::Init()
 {
   fMx  = new Double_t[fK];
   fMy  = new Double_t[fK];
-  // fX   = new Double_t[fN];
-  // fY   = new Double_t[fN];
-  // fW   = new Double_t[fN];
   fTgt = new Int_t[fN];
 
 }
@@ -171,4 +221,115 @@ void kMeansWeights::ScatterPlot()
   gr1->Draw("AP");
   gr2->Draw("PSAME");
 
+}
+
+Int_t kMeansWeights::GetCluster(Double_t x, Double_t y)
+{
+  Int_t cluster = -1;
+  Double_t dist = 99999;
+  for (int k = 0; k < fK; ++k){
+    Double_t dst = d(x, y, fMx[k], fMy[k]);
+    if (dst < dist){
+      cluster = k;
+      dist = dst;
+    }
+  }
+  if (cluster < 0){ cout << "[E]: Nearest cluster not found" << endl;}
+  return cluster;
+}
+Int_t kMeansWeights::classicalBinning(Double_t x, Double_t y){
+  if ((-1. < x) && (x <= 1) && (-1.0 < y) && (y <= -0.2))  return 0;
+  else if ((-1. < x ) && ( x <= 1)   && (-0.2 < y) && ( y  <=  0.1))  return 1;
+  else if ((-1. < x ) && ( x <= 0.3) && (0.1  < y) && ( y  <=  0.4))  return 2;
+  else if ((0.3 < x ) && ( x <= 1.)  && (0.1  < y) && ( y  <=  0.4))  return 3;
+  else if ((-1. < x ) && ( x <= 0.1) && (0.4  < y) && ( y  <=  1.0))  return 4;
+  else if ((0.1 < x ) && ( x <= 0.4) && (0.4  < y) && ( y  <=  1.0))  return 5;
+  else if ((0.4 < x ) && ( x <= 1.)  && (0.4  < y) && ( y  <=  1.0))  return 6;
+  else {
+    cout <<  "one bin is missing " << x << " " << y << endl;
+    return -1;
+  }
+}
+
+
+
+void kMeansWeights::makeHistos()
+{
+  TH1F* hTTb = new TH1F("hTTb","", fK, -0.5, fK-0.5);
+  TH1F* hTTH = new TH1F("hTTH","", fK, -0.5, fK-0.5);
+  TH1F* hTTW = new TH1F("hTTW","", fK, -0.5, fK-0.5);
+
+  TH1F* hTTbOld = new TH1F("hTTbOld","", fK, -0.5, fK-0.5);
+  TH1F* hTTHOld = new TH1F("hTTHOld","", fK, -0.5, fK-0.5);
+  TH1F* hTTWOld = new TH1F("hTTWOld","", fK, -0.5, fK-0.5);
+  
+  for (int n = 0; n < fTTbarX.size(); ++n){
+    hTTb->Fill( GetCluster(fTTbarX[n], fTTbarY[n]), fTTbarW[n]);
+    hTTbOld->Fill( classicalBinning(fTTbarX[n], fTTbarY[n]), fTTbarW[n]);
+  }
+  
+  for (int n = 0; n < fTTHX.size(); ++n){
+    hTTH->Fill( GetCluster(fTTHX[n], fTTHY[n]), fTTHW[n]);
+    hTTHOld->Fill( classicalBinning(fTTHX[n], fTTHY[n]), fTTHW[n]);
+    
+  }
+  for (int n = 0; n < fTTWX.size(); ++n){
+    hTTW->Fill( GetCluster(fTTWX[n], fTTWY[n]), fTTWW[n]);
+    hTTWOld->Fill( classicalBinning(fTTWX[n], fTTWY[n]), fTTWW[n]);
+  }
+  THStack* mc = new THStack();
+  THStack* mcOld = new THStack();
+  hTTb->SetFillColor( kRed     );
+  hTTH->SetFillColor( kBlue    );
+  hTTW->SetFillColor( kMagenta );
+  hTTbOld->SetFillColor( kRed     );
+  hTTHOld->SetFillColor( kBlue    );
+  hTTWOld->SetFillColor( kMagenta );
+  mc->Add( hTTH);  mc->Add( hTTb);  mc->Add( hTTW);
+  mcOld->Add( hTTHOld);  mcOld->Add( hTTbOld);  mcOld->Add( hTTWOld);
+  TCanvas* c1 = new TCanvas();
+  mc->Draw("HIST");
+  TCanvas* c2 = new TCanvas();
+  mcOld->Draw("HIST");
+
+  TH1F* hTTb2 = (TH1F*) hTTb->Clone("hTTb2");
+  TH1F* hTTW2 = (TH1F*) hTTW->Clone("hTTW2");
+  TH1F* hTTH2 = (TH1F*) hTTH->Clone("hTTW2");
+  TH1F* hTTbOld2 = (TH1F*) hTTbOld->Clone("hTTbOld2");
+  TH1F*	hTTHOld2 = (TH1F*) hTTHOld->Clone("hTTHOld2");
+  TH1F*	hTTWOld2 = (TH1F*) hTTWOld->Clone("hTTWOld2");
+  
+  hTTb2->Add(hTTW2); 
+  cout << "New " << hTTH2->KolmogorovTest(hTTb2,"M") << endl;
+  hTTbOld2->Add(hTTWOld2);
+  cout << "Old " << hTTHOld2->KolmogorovTest(hTTbOld2,"M") << endl;
+    
+  return;
+}
+
+
+void kMeansWeights::MCScatterPlots()
+{
+  TGraph* gr1 = new TGraph( fTTbarX.size(), &fTTbarX[0], &fTTbarY[0]);
+  TGraph* gr2 = new TGraph( fTTHX.size()  , &fTTHX[0]  , &fTTHY[0]  );
+  TGraph* gr3 = new TGraph( fTTWX.size()  , &fTTWX[0]  , &fTTWY[0]  );
+
+  gr1->SetMarkerStyle( 6 );
+  gr2->SetMarkerStyle( 6 );
+  gr3->SetMarkerStyle( 6 );
+
+
+  TCanvas* c1 = new TCanvas(); gr1->Draw("A,P");
+  TCanvas* c2 = new TCanvas(); gr2->Draw("A,P");
+  TCanvas* c3 = new TCanvas(); gr3->Draw("A,P");
+  gr1->GetXaxis()->SetRangeUser(-1.,1.);
+  gr1->GetYaxis()->SetRangeUser(-1.,1.);
+  gr2->GetXaxis()->SetRangeUser(-1.,1.);
+  gr2->GetYaxis()->SetRangeUser(-1.,1.);
+  gr3->GetXaxis()->SetRangeUser(-1.,1.);
+  gr3->GetYaxis()->SetRangeUser(-1.,1.);
+
+  
+  
+  return;
 }

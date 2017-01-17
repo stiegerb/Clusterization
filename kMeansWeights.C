@@ -106,6 +106,7 @@ void kMeansWeights::readFromFiles()
 Double_t kMeansWeights::d(Double_t x, Double_t y, Double_t m_x, Double_t m_y) 
 {
   return TMath::Sqrt( (x-m_x) * (x-m_x) + (y-m_y) * (y-m_y) );
+  //return TMath::Abs(x-m_x) + TMath::Abs(y-m_y);
 }
 
 
@@ -218,16 +219,24 @@ void kMeansWeights::ScatterPlot()
 
   TCanvas* c = new TCanvas("kmeans"+fKname, "kmeans"+fKname, 800, 800);
   c->cd();
+  TH1F* hDummy = new TH1F("hDummy","",2,-1,1);
+  hDummy->SetBinContent(1, 1.);
+  hDummy->SetBinContent(2,-1.);
+  hDummy->SetLineColor(kWhite);
+  hDummy->Draw();
+  
   std::vector<TGraph*> graphs; graphs.clear();
-  for(int igr=0; igr<fK; ++igr)
-    {
+  for(int igr=0; igr<fK; ++igr){
       graphs.push_back(new TGraph( fDataX[igr].size(), &fDataX[igr][0], &fDataY[igr][0] ));
       graphs[igr]->SetMarkerColor(igr+1);    
       graphs[igr]->SetMarkerStyle(kFullCircle);
       
-      igr==0 ? graphs[igr]->Draw("AP") : graphs[igr]->Draw("PSAME");
+      //igr==0 ? graphs[igr]->Draw("AP") : graphs[igr]->Draw("PSAME");
+      graphs[igr]->Draw("PSAME");
       
     }
+  graphs[0]->GetXaxis()->SetRangeUser(-1.,1.);
+  graphs[0]->GetYaxis()->SetRangeUser(-1.,1.);
   c->Print("kmeans"+fKname+".png");
   c->Print("kmeans"+fKname+".pdf");
 

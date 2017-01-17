@@ -1,4 +1,5 @@
 #include "RecursiveClustering.h"
+#include "MakeSimpleCard.h"
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -284,6 +285,14 @@ void RecursiveClustering::Test()
 
   mc->Add( hTTbar ); mc->Add(hTTW); mc->Add(hTTH);
   mc->Draw("HIST");
+
+  vector<TH1*> bkgs;
+  bkgs.push_back(hTTbar);
+  bkgs.push_back(hTTW  );
+
+  MakeSimpleCard card(hTTH, bkgs, "datacard", true);
+  card.doCard();
+
   return;
 }
 

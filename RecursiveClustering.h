@@ -21,8 +21,6 @@ class Cluster
   TFile* fOut_; // Not sure it's needed. Perhaps to avoid memory-resident trees
   TTree* tTTH_;
   TTree* tBkg_;
-
-
 };
 
 
@@ -31,10 +29,21 @@ class RecursiveClustering
  public:
   RecursiveClustering();
   ~RecursiveClustering() {};
+  void GetEventsFromFile();
+  void clusterize();
+  void makeHistos();
+  void makeScatterPlot();
 
+  TFile* fOut_; // Not sure it's needed. Perhaps to avoid memory-resident trees
 
-
-
+  TTree*
+    trainTTbar_,
+    trainTTV_,
+    trainTTH,
+    testTTbar,
+    testTTV,
+    testTTH;
+  
 };
 
 #endif

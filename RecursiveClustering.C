@@ -156,15 +156,17 @@ void Cluster::recluster()
     for (int n = 0; n < fTTbar.size(); ++n){
       if ( FindSubCluster( fTTbar[n] ) == k) TTbar.push_back( fTTH[n]);
     }
-    cout << "Checkpoint 1" << endl;
     cout << TTH.size() << " " << TTbar.size() << " " << TTW.size() << endl;
     if (TTH.size() == 0) fIsClusterizable = false;
+    else if (TTbar.size() == 0) fIsClusterizable = false;
+    else if (TTW  .size() == 0) fIsClusterizable = false;
     else{
       if (36400*TTH.size()*TTH[0].fW < 5.)
 	fIsClusterizable = false;
     }
     if (!fIsClusterizable){
       cout << "Not clusterizable anymore " << endl;
+      cout << "This will be subcluster " << gIndex <<  endl;
       SubClusters.clear();
       fIndex = gIndex;
       gIndex++;
@@ -172,13 +174,11 @@ void Cluster::recluster()
     }
 
       
-    cout << "Checkpoint 2"<< endl;
     Cluster subCluster = Cluster( TTbar,  TTH  ,  TTW, fK);
     subCluster.recluster();
     SubClusters.push_back(subCluster);
-    cout << "Checkpoint 2"<< endl;
   }
-  cout << "... done" << endl;
+
 
   delete r;
 
@@ -297,18 +297,35 @@ void RecursiveClustering::Test()
 }
 
 
-// void RecursiveClustering::VoronoiPlot()
-// {
-//   vector<TGraph*> graphs; graphs.clear();
-//   for (Int_t k = 0; k < gIndex; ++k){
-//     graphs.push_back(
-//   }
-//   for (Double_t x = -1; x < 1.; x = x + 1e-3){
-//       for (Double_t y = -1; y < 1.; y = y + 1e-3){
-// 	Int_t k = mainCluster.FindUnclusterizableCluster(Point(x,y,-1));
-	
-	
-//       }
-//   }
+void RecursiveClustering::VoronoiPlot()
+{
+  vector<TGraph*> graphs; graphs.clear();
+  vector<Double_t>* X = new vector<Double_t>[gIndex];
+  vector<Double_t>* Y = new vector<Double_t>[gIndex]; 
 
-// }
+
+  for (Double_t x = -1; x < 1.; x = x + 1e-3){
+      for (Double_t y = -1; y < 1.; y = y + 1e-3){
+	Int_t k = mainCluster.FindUnclusterizableCluster(Point(x,y,-1));
+	X[k].push_back(x);
+	Y[k].push_back(y);	
+      }
+  }
+
+
+  TCanvas* c = new TCanvas();
+  c->cd();
+  TH1F* hDummy = new TH1F("hDummy","",2,-1,1);
+  hDummy->SetBinContent(1, 1.);
+  hDummy->SetBinContent(2,-1.);
+  hDummy->SetLineColor(kWhite);
+  hDummy->Draw();
+
+  for (Int_t k = 0; k < gIndex; ++k){
+    graphs.push_back(new TGraph( X[k].size(), &X[k][0], &Y[k][0] ));
+    graphs[k]->SetMarkerColor(k+1);    
+    graphs[k]->SetMarkerStyle(6);
+    graphs[k]->Draw("PSAME");
+  }  
+
+}

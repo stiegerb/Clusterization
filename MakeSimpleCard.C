@@ -32,6 +32,8 @@ void MakeSimpleCard::doCard()
 
   cout << "[MakeSimpleCard::doCard] Need to implement statistical uncertainties" << endl;
 
+  WriteShapes();
+
   WriteCard();
 
   cout << "[MakeSimpleCard::doCard] Please have a nice day." << endl;
@@ -47,8 +49,8 @@ void MakeSimpleCard::Renormalize()
 
 void MakeSimpleCard::FillFirstBlock()
 {
-  card_ << "imax 1\n";
-  card_ << "jmax 1\n";
+  card_ << "imax *\n";
+  card_ << "jmax *\n";
   card_ << "kmax *\n";
   card_ << "---------------\n";
   card_ << "shapes * * " << cardName_ << "_shapes.root $PROCESS $PROCESS_$SYSTEMATIC\n";
@@ -81,7 +83,7 @@ void MakeSimpleCard::FillRates()
     card_ << "      a";
   card_<< "\n";
 
-  card_ << "process         signal     ";
+  card_ << "process         " << sig_->GetName() << "      ";
   for(auto& bkg : bkg_)
     card_ << "       " << bkg->GetName();
   card_ << "\n";
@@ -95,14 +97,23 @@ void MakeSimpleCard::FillRates()
     }
   card_ << "\n";
 
-  card_ << "lumi        " << 0.02;
+  card_ << "rate        " << sig_->Integral();
   for(auto& bkg : bkg_)
     {
-      card_ << "       " << 0.02;
+      card_ << "       " << bkg->Integral();
     }
   card_ << "\n";
 
-  card_ << "sigXsec        " << double(1+systSig_);
+  card_ << "-------------------\n";
+
+  card_ << "lumi    lnN    " << 1.02;
+  for(auto& bkg : bkg_)
+    {
+      card_ << "       " << 1.02;
+    }
+  card_ << "\n";
+
+  card_ << "sigXsec lnN       " << double(1+systSig_);
   for(auto& bkg : bkg_)
     {
       card_ << "      - ";
@@ -111,7 +122,7 @@ void MakeSimpleCard::FillRates()
 
   for(auto& bkg : bkg_)
     {
-      card_ << bkg->GetName() << "Xsec        - ";
+      card_ << bkg->GetName() << "Xsec lnN       - ";
       for(auto& ibkg : bkg_)
         {
           ibkg == bkg ? card_ << "      " << double(1+systBkg_) : card_ << "      -";
@@ -125,7 +136,8 @@ void MakeSimpleCard::FillRates()
 void MakeSimpleCard::WriteShapes()
 {
   shapesFile_ = TFile::Open(cardName_+"_shapes.root", "RECREATE");
-  
+
+  data_->Write();
   sig_->Write();
   for(auto& bkg : bkg_)
     bkg->Write();

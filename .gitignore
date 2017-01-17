@@ -1,0 +1,8 @@
+# Emacs backup files
+*~
+# Images
+*png
+# Compilation crap
+*_C.d
+*_C.so
+*_ACLiC_dict_rdict.pcm

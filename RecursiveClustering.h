@@ -49,6 +49,7 @@ class RecursiveClustering
   void fit();
   //void ScatterPlot();
   void makeHistos();
+  void VoronoiPlot();
   void     Test();
 
  protected:

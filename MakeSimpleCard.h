@@ -13,13 +13,14 @@ using namespace std;
 class MakeSimpleCard
 {
  public:
-  MakeSimpleCard(TH1* sig, vector<TH1*> bkg, TString cardName="datacard.txt", bool debug=false);
+  MakeSimpleCard(TH1* sig, vector<TH1*> bkg, TString cardName="datacard.txt", double lumi=37000., bool debug=false);
   ~MakeSimpleCard() {};
   
   void doCard();
 
  protected:
-  
+
+  void Renormalize();
   void FillFirstBlock();
   void FillObserved();
   void FillRates();
@@ -27,6 +28,7 @@ class MakeSimpleCard
   void WriteCard();
 
   bool debug_;
+  double lumi_;
 
   TH1* sig_;
   vector<TH1*> bkg_;

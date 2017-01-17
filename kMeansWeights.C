@@ -1,4 +1,5 @@
 #include "kMeansWeights.h"
+#include "MakeSimpleCard.h"
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -323,6 +324,12 @@ void kMeansWeights::makeHistos()
   hTTbOld2->Add(hTTWOld2);
   cout << "Old " << hTTHOld2->KolmogorovTest(hTTbOld2,"M") << endl;
     
+  vector<TH1*> bkgs;
+  bkgs.push_back(hTTbOld2);
+  bkgs.push_back(hTTWOld2);
+  MakeSimpleCard card(hTTHOld2, bkgs, "datacard_oldBinning", 37000., false);
+  card.doCard();
+  
   return;
 }
 

@@ -2,10 +2,11 @@
 
 
 
-MakeSimpleCard::MakeSimpleCard(TH1* sig, vector<TH1*> bkg, TString cardName, bool debug):
+MakeSimpleCard::MakeSimpleCard(TH1* sig, vector<TH1*> bkg, TString cardName, double lumi, bool debug):
   sig_(sig),
   bkg_(bkg),
   cardName_(cardName),
+  lumi_(lumi),
   systSig_(0.5),
   systBkg_(0.10),
   nBkg_(bkg.size()+1),
@@ -20,6 +21,8 @@ void MakeSimpleCard::doCard()
   card_.open(cardName_+".txt");
   cout << "Blsdjgshldh" << endl;
   card_ << "# This is a sample card for categorization study.\n";
+
+  Renormalize();
   
   FillFirstBlock();
   
@@ -31,7 +34,15 @@ void MakeSimpleCard::doCard()
 
   WriteCard();
 
-  cout << "[MakeSimpleCard::doCard] Please have a nice day.";
+  cout << "[MakeSimpleCard::doCard] Please have a nice day." << endl;
+}
+
+void MakeSimpleCard::Renormalize()
+{
+  sig_->Scale(lumi_);
+  for(auto& bkg : bkg_)
+    bkg->Scale(lumi_);
+  if(debug_) cout << "[MakeSimpleCard::Renormalize] Method finished successfully." << endl;
 }
 
 void MakeSimpleCard::FillFirstBlock()

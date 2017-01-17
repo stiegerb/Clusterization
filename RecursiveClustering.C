@@ -289,8 +289,7 @@ void RecursiveClustering::Test()
   vector<TH1*> bkgs;
   bkgs.push_back(hTTbar);
   bkgs.push_back(hTTW  );
-
-  MakeSimpleCard card(hTTH, bkgs, "datacard", true);
+  MakeSimpleCard card(hTTH, bkgs, "datacard_newBinning", 37000., false);
   card.doCard();
 
   return;

@@ -328,8 +328,15 @@ void kMeansWeights::makeHistos()
   vector<TH1*> bkgs;
   bkgs.push_back(hTTbOld2);
   bkgs.push_back(hTTWOld2);
-  MakeSimpleCard card(hTTHOld2, bkgs, "datacard_oldBinning", 37000., false);
+  MakeSimpleCard card(hTTHOld2, bkgs, "datacard_classical", 37000., false);
   card.doCard();
+
+  vector<TH1*> bkgs_c;
+  bkgs_c.push_back(hTTb2);
+  bkgs_c.push_back(hTTW2);
+  MakeSimpleCard card_c(hTTH2, bkgs_c, "datacard_kmeansweights", 37000., false);
+  card_c.doCard();
+
   
   return;
 }

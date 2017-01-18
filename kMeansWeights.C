@@ -28,7 +28,7 @@ void kMeansWeights::readFromFiles()
 {
   
   fN = 0;
-  ifstream f; f.open("data/ttbar2.txt");
+  ifstream f; f.open("data/TTSingleLeptonMarco.txt");
   Int_t count = 0;
   while (f){
     Double_t x = 0; Double_t y = 0; Double_t w = 0;
@@ -38,33 +38,33 @@ void kMeansWeights::readFromFiles()
     if (count%2 == 0){
       fX.push_back(x);
       fY.push_back(y);
-      fW.push_back(w);
+      fW.push_back(2*w);
       cout << x << " "  << y << " " << w  << endl;
       fN ++;
     }
     else{
       fTTbarX.push_back(x);
       fTTbarY.push_back(y);
-      fTTbarW.push_back(w);
+      fTTbarW.push_back(2*w);
     }
     count++;
   }
   f.close();
   
-  f.open("data/tth.txt");
+  f.open("data/ttH.txt");
   while (f){
     Double_t x = 0; Double_t y = 0; Double_t w = 0;
     f >> x >> y >> w;
     if (count%2 == 0){
       fX.push_back(x);
       fY.push_back(y);
-      fW.push_back(w);
+      fW.push_back(2*w);
       fN ++;
     }
     else{
       fTTHX.push_back(x);
       fTTHY.push_back(y);
-      fTTHW.push_back(w);
+      fTTHW.push_back(2*w);
     }
     count++;
   }
@@ -77,13 +77,13 @@ void kMeansWeights::readFromFiles()
     if (count%2 == 0){
       fX.push_back(x);
       fY.push_back(y);
-      fW.push_back(w);
+      fW.push_back(2*w);
       fN ++;
     }
     else{
       fTTWX.push_back(x);
       fTTWY.push_back(y);
-      fTTWW.push_back(w);
+      fTTWW.push_back(2*w);
     }
     count++;
   }

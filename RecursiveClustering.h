@@ -1,5 +1,7 @@
 #ifndef RECURSIVECLUSTERING_H
 #define RECURSIVECLUSTERING_H
+
+#include"TString.h"
 class Point
 {
  public:
@@ -16,20 +18,24 @@ class Cluster
 {
  public:
   Cluster(){}
-  Cluster( vector<Point> , vector<Point>, vector<Point>, Int_t  );
+  Cluster( vector<Point> , vector<Point>, vector<Point>, Int_t, TString, Point  );
   ~Cluster() { } 
-  void recluster();
+  vector<Point> recluster();
   Int_t    FindUnclusterizableCluster( Point );
-  
+  TString  FindSubClusterName(Point, Int_t);
+  TString  GetName(){ return fName; }
+  Point    GetCentroid(){ return fCentroid;}
  private:
   vector<Point> fTTbar;
   vector<Point> fTTH  ;
   vector<Point> fTTW  ;
-  vector<Point> fData;
-  
+  vector<Point> fData ;
+
   vector<Point> fCentroids;
+  Point fCentroid;
   vector<Int_t> fTgt;
   vector<Cluster> SubClusters;
+  TString fName; 
 
   bool fIsClusterizable;
   Int_t fIndex; // global label for every non clusterizable cluster
@@ -37,7 +43,7 @@ class Cluster
   void     MakeAssignment();
   Int_t    CalculateCentroids();
   Int_t    fK;
-  Int_t    FindSubCluster( Point );
+  Int_t    FindSubCluster( Point, bool verbose=false );
   Double_t d(Double_t, Double_t, Double_t, Double_t);
 };
 
@@ -46,12 +52,11 @@ class RecursiveClustering
  public: 
   RecursiveClustering(Int_t k) ;
   ~RecursiveClustering() {}
-  void fit();
-  //void ScatterPlot();
   void makeHistos();
   void VoronoiPlot();
+  void VoronoiPlot2();
   void     Test();
-
+  
  protected:
   // Monte Carlo
   vector<Point>  fTTbar;  
@@ -60,6 +65,7 @@ class RecursiveClustering
   vector<Point> fTTbarMC;
   vector<Point> fTTHMC;
   vector<Point> fTTWMC;
+  vector<Point> fCentroids;
   Int_t fK;
 
   Cluster mainCluster;
@@ -67,6 +73,7 @@ class RecursiveClustering
   Double_t d(Double_t, Double_t, Double_t, Double_t);
   void     readFromFiles();
   void     StartTheThing();
+
 };
 
 

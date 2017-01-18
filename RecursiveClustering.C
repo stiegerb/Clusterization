@@ -23,12 +23,15 @@ bool SortY( Point i, Point j)
   return ( i.fY < j.fY );
 }
 
+std::ostream &operator<<(std::ostream &os, Point const &point) { 
+  return os << "(" << point.fX << ", " << point.fY << ")";
+}
 Int_t gIndex = 0;
 
-Cluster::Cluster( vector<Point> TTbar, vector<Point> TTH  , vector<Point> TTW, Int_t k )
+Cluster::Cluster( vector<Point> TTbar, vector<Point> TTH  , vector<Point> TTW, Int_t k , TString name, Point centroid)
 {
-  cout << "Initialising cluster with " << TTH.size() 
-       << " " << TTW.size() << " " << TTbar.size() << endl;
+  fName = name;
+  cout << "Initialising cluster with name " << name << endl;
   fTTbar  = TTbar;
   fTTH    = TTH  ;	
   fTTW    = TTW  ;	
@@ -39,23 +42,26 @@ Cluster::Cluster( vector<Point> TTbar, vector<Point> TTH  , vector<Point> TTW, I
 
   fIsClusterizable = true;
   fK = k;
-
+  fCentroid = centroid;
 
 }
+
 void Cluster::MakeAssignment()
 {
   fTgt.clear();
   // Assigns each data point to its cluster :)
   for (int n = 0; n < fData.size(); ++n){
-    fTgt.push_back(FindSubCluster( fData[n] ));
+    fTgt.push_back( FindSubCluster( fData[n] ));
   }
 }
 
-Int_t Cluster::FindSubCluster( Point point )
+Int_t Cluster::FindSubCluster( Point point , bool verbose)
 {
+  if (verbose ) cout << "Finding subcluster" << endl;
   Int_t cluster = -1;
   Double_t dist = 10000;
   for (int k = 0; k < fCentroids.size(); ++k){
+    if (verbose ) cout << "Checking centroid " << fCentroids[k] << endl;
     Double_t dst = d( point.fX, point.fY, fCentroids[k].fX, fCentroids[k].fY);
     if (dst < dist){
       cluster = k;
@@ -68,11 +74,33 @@ Int_t Cluster::FindSubCluster( Point point )
 
 Int_t Cluster::FindUnclusterizableCluster( Point point )
 {
+  // cout << "################################################" << endl;
+  // cout << "################################################" << endl;
+  // cout << "#########FindUnclusterizableCluster#############" << endl;
+  // cout << "################################################" << endl;
+  // cout << "################################################" << endl;
+  // cout << "#### Cluster " << fName << "################" << endl;
+  // cout << point << endl;
+
+
   if (fIsClusterizable){
-    return SubClusters[FindSubCluster(point)].FindUnclusterizableCluster(point);
+    //    cout << "Checking point in subclusters..." << endl;
+    return SubClusters[FindSubCluster(point,false)].FindUnclusterizableCluster(point);
   }
   else{
     return fIndex;
+  }
+
+}
+
+
+TString Cluster::FindSubClusterName( Point point, Int_t level )
+{
+  if ( fName.Sizeof() <= level and fIsClusterizable){
+    return SubClusters[FindSubCluster(point,false)].FindSubClusterName(point,level);
+  }
+  else{
+    return fName;
   }
 
 }
@@ -113,7 +141,7 @@ Int_t Cluster::CalculateCentroids()
 }
 
 
-void Cluster::recluster()
+vector<Point> Cluster::recluster()
 {
   TRandom3* r = new TRandom3();
   Double_t maxX = (*max_element(fData.begin(), fData.end(),SortX)).fX;
@@ -141,12 +169,11 @@ void Cluster::recluster()
   if ( maxIt == it) cout << "[W]: Maximum number of iterations reached!! ";
   
   
-  cout << "Classificating points and building subclusters" << endl;
+  vector<Point> subCentroidList; subCentroidList.clear();
   for (int k = 0; k < fK; ++k){
-    cout << "Cluster " << k << endl;
-    vector<Point> TTbar;
-    vector<Point> TTW;
-    vector<Point> TTH;
+    vector<Point> TTbar; TTbar.clear();
+    vector<Point> TTW;   TTW.clear();
+    vector<Point> TTH;   TTH.clear();
     for (int n = 0; n < fTTH.size(); ++n){
       if ( FindSubCluster( fTTH[n] ) == k) TTH.push_back( fTTH[n]);
     }
@@ -156,31 +183,51 @@ void Cluster::recluster()
     for (int n = 0; n < fTTbar.size(); ++n){
       if ( FindSubCluster( fTTbar[n] ) == k) TTbar.push_back( fTTH[n]);
     }
-    cout << TTH.size() << " " << TTbar.size() << " " << TTW.size() << endl;
     if (TTH.size() == 0) fIsClusterizable = false;
     else if (TTbar.size() == 0) fIsClusterizable = false;
     else if (TTW  .size() == 0) fIsClusterizable = false;
     else{
-      if (36400*TTH.size()*TTH[0].fW < 5.)
+      if (37000*TTH.size()*TTH[0].fW < 5.)
 	fIsClusterizable = false;
     }
+    Double_t tth = 0;
+    Double_t ttw = 0;
+    Double_t ttbar = 0;
+    if (TTH.size() > 0)   tth   = 36400 * TTH.size()  * TTH[0]  .fW;
+    if (TTW.size() > 0)   ttw   = 36400 * TTW.size()  * TTW[0]  .fW;
+    if (TTbar.size() > 0) ttbar = 36400 * TTbar.size()  * TTbar[0]  .fW;
+    cout << "Expected events in the subcluster " << tth
+	 << " " << ttw << " " << ttbar << endl;
+
     if (!fIsClusterizable){
       cout << "Not clusterizable anymore " << endl;
       cout << "This will be subcluster " << gIndex <<  endl;
+      cout << "The centroid is " << fCentroid << endl;
+      cout << "The name is " << fName << endl;
       SubClusters.clear();
       fIndex = gIndex;
       gIndex++;
+      subCentroidList.clear();
+      subCentroidList.push_back( fCentroid );
       break;
     }
-
-      
-    Cluster subCluster = Cluster( TTbar,  TTH  ,  TTW, fK);
-    subCluster.recluster();
-    SubClusters.push_back(subCluster);
+    else{
+      cout << "Apparently subcluster " << k << " from " << fName 
+	   << " is huge!!! (thats what she said), so theres not showstopper not to keep clustering" << endl;
+      Cluster subCluster = Cluster( TTbar,  TTH  ,  TTW, fK, fName + Form("%d",k), fCentroids[k]);
+      SubClusters.push_back(subCluster);
+    }
+  }
+  for (int k = 0; k < SubClusters.size(); ++k){
+      cout << "Cluster " << fName << " is huge!!! (thats what she said)" << endl;
+      vector<Point> listOfSubcentroids = SubClusters[k].recluster();
+      subCentroidList.insert( subCentroidList.end(), listOfSubcentroids.begin(), listOfSubcentroids.end());
   }
 
 
   delete r;
+  cout << "Name and size of centroid list " << fName << " " << subCentroidList.size() << endl;
+  return subCentroidList;
 
 }
 
@@ -192,26 +239,26 @@ RecursiveClustering::RecursiveClustering(Int_t k)
   StartTheThing();
   
   cout << "Produced " << gIndex << " clusters" << endl;
+  Point point(0.353811, 0.456623,-1.);
+  cout << "Point is " << mainCluster.FindUnclusterizableCluster(point) <<endl;
 }
 
 void RecursiveClustering::StartTheThing()
 {
-  mainCluster = Cluster(fTTbar, fTTH, fTTW, fK);
-  mainCluster.recluster();
+  mainCluster = Cluster(fTTbar, fTTH, fTTW, fK, "A", Point(9999,99999,-1));
+  fCentroids = mainCluster.recluster();
 }
 
 void RecursiveClustering::readFromFiles()
 {
   
   fTTbar.clear(); fTTH.clear(); fTTW.clear();
-  ifstream f; f.open("data/ttbar2.txt");
+  ifstream f; f.open("data/TTSingleLeptonMarco.txt");
   Int_t count = 0;
   while (f){
     Double_t x = 0; Double_t y = 0; Double_t w = 0;
     f >> x >> y >> w;
-    if ( TMath::Abs(x) > 80. ) continue;
-    if ( TMath::Abs(y) > 80. ) continue;
-    Point point = Point(x,y,w);
+    Point point = Point(x,y,2*w);
     if (count%2 == 0)
       fTTbar.push_back(point);
     else
@@ -220,11 +267,11 @@ void RecursiveClustering::readFromFiles()
   }
   f.close();
   
-  f.open("data/tth.txt");
+  f.open("data/ttH.txt");
   while (f){
     Double_t x = 0; Double_t y = 0; Double_t w = 0;
     f >> x >> y >> w;
-    Point point = Point(x,y,w);
+    Point point = Point(x,y,2*w);
     if (count%2 == 0)
       fTTH.push_back(point);
     else
@@ -232,12 +279,12 @@ void RecursiveClustering::readFromFiles()
     count++;
   }
   f.close();
-  
+
   f.open("data/ttw.txt");
   while (f){
     Double_t x = 0; Double_t y = 0; Double_t w = 0;
     f >> x >> y >> w;
-    Point point = Point(x,y,w);
+    Point point = Point(x,y,2*w);
     if (count%2 == 0)
       fTTW.push_back(point);
     else
@@ -274,11 +321,12 @@ void RecursiveClustering::Test()
   vector<Point>::iterator point;
 
   for (point = fTTbarMC.begin(); point != fTTbarMC.end(); ++point)
-    hTTbar->Fill( mainCluster.FindUnclusterizableCluster( *point), point->fW);
+    hTTbar->Fill( mainCluster.FindUnclusterizableCluster( *point), 37000*point->fW);
   for (point = fTTWMC.begin(); point != fTTWMC.end(); ++point)
-    hTTW->Fill( mainCluster.FindUnclusterizableCluster( *point), point->fW);
+    hTTW->Fill( mainCluster.FindUnclusterizableCluster( *point), 37000*point->fW);
   for (point = fTTHMC.begin(); point != fTTHMC.end(); ++point)
-    hTTH->Fill( mainCluster.FindUnclusterizableCluster( *point), point->fW);
+    hTTH->Fill( mainCluster.FindUnclusterizableCluster( *point), 37000*point->fW);
+
   hTTbar->SetFillColor( kRed     );
   hTTH->SetFillColor( kBlue    );
   hTTW->SetFillColor( kMagenta );
@@ -286,10 +334,17 @@ void RecursiveClustering::Test()
   mc->Add( hTTbar ); mc->Add(hTTW); mc->Add(hTTH);
   mc->Draw("HIST");
 
+  for (int k = 0; k < gIndex; ++k){
+    cout << hTTbar->GetBinContent(k+1) << "  " 
+	 << hTTW  ->GetBinContent(k+1) << "  " 
+	 << hTTH  ->GetBinContent(k+1) << endl;
+  }
+
   vector<TH1*> bkgs;
   bkgs.push_back(hTTbar);
   bkgs.push_back(hTTW  );
-  MakeSimpleCard card(hTTH, bkgs, "datacard_newBinning", 37000., false);
+  //  MakeSimpleCard card(hTTH, bkgs, "datacard_newBinning", 37000., false);
+  MakeSimpleCard card(hTTH, bkgs, "datacard_newBinning", 1., false);
   card.doCard();
 
   return;
@@ -302,12 +357,57 @@ void RecursiveClustering::VoronoiPlot()
   vector<Double_t>* X = new vector<Double_t>[gIndex];
   vector<Double_t>* Y = new vector<Double_t>[gIndex]; 
 
-
-  for (Double_t x = -1; x < 1.; x = x + 1e-3){
-      for (Double_t y = -1; y < 1.; y = y + 1e-3){
+  cout << "Calculating points" << endl;
+  for (Double_t x = -1; x < 1.; x = x + 1e-2){
+    
+      for (Double_t y = -1; y < 1.; y = y + 1e-2){
+	cout << "POint: " << x << " " << y << endl;
 	Int_t k = mainCluster.FindUnclusterizableCluster(Point(x,y,-1));
 	X[k].push_back(x);
 	Y[k].push_back(y);	
+      }
+  }
+
+
+
+  TCanvas* c = new TCanvas();
+  c->cd();
+  TH1F* hDummy = new TH1F("hDummy","",2,-1,1);
+  hDummy->SetBinContent(1, 1.);
+  hDummy->SetBinContent(2,-1.);
+  hDummy->SetLineColor(kWhite);
+  hDummy->Draw();
+  cout << "Done... now plotting" << endl;
+  cout << fCentroids.size() << endl;
+
+  for (Int_t k = 0; k < gIndex; ++k){
+    graphs.push_back(new TGraph( X[k].size(), &X[k][0], &Y[k][0] ));
+    graphs[k]->SetMarkerColor(k+1);    
+    graphs[k]->SetMarkerStyle(6);
+    graphs[k]->Draw("PSAME");
+  }  
+
+}
+
+
+
+void RecursiveClustering::VoronoiPlot2()
+{
+  vector<TGraph*> graphs; graphs.clear();
+  vector<Double_t>* X = new vector<Double_t>[gIndex];
+  vector<Double_t>* Y = new vector<Double_t>[gIndex]; 
+
+  vector<TString> stringList; stringList.clear();
+  for (Double_t x = -1; x < 1.; x = x + 1e-3){
+      for (Double_t y = -1; y < 1.; y = y + 1e-3){
+	TString nam = mainCluster.FindSubClusterName(Point(x,y,-1), 2);
+	vector<TString>::iterator itr = std::find( stringList.begin(), stringList.end(), nam);
+	if ( itr == stringList.end()){
+	  stringList.push_back(nam);
+	}
+	itr = std::find( stringList.begin(), stringList.end(), nam);
+	X[itr-stringList.begin()].push_back(x);
+	Y[itr-stringList.begin()].push_back(y);	
       }
   }
 

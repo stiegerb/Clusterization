@@ -11,6 +11,7 @@
 #include "TCanvas.h"
 #include <sstream>
 #include <TString.h> 
+#include "TStyle.h"
 
 using namespace std;
 
@@ -358,10 +359,9 @@ void RecursiveClustering::VoronoiPlot()
   vector<Double_t>* Y = new vector<Double_t>[gIndex]; 
 
   cout << "Calculating points" << endl;
-  for (Double_t x = -1; x < 1.; x = x + 1e-2){
+  for (Double_t x = -1; x < 1.; x = x + 1e-3){
     
-      for (Double_t y = -1; y < 1.; y = y + 1e-2){
-	cout << "POint: " << x << " " << y << endl;
+      for (Double_t y = -1; y < 1.; y = y + 1e-3){
 	Int_t k = mainCluster.FindUnclusterizableCluster(Point(x,y,-1));
 	X[k].push_back(x);
 	Y[k].push_back(y);	
@@ -372,10 +372,12 @@ void RecursiveClustering::VoronoiPlot()
 
   TCanvas* c = new TCanvas();
   c->cd();
+  gStyle->SetOptStat(0);
   TH1F* hDummy = new TH1F("hDummy","",2,-1,1);
   hDummy->SetBinContent(1, 1.);
   hDummy->SetBinContent(2,-1.);
   hDummy->SetLineColor(kWhite);
+  hDummy->GetYaxis()->SetRangeUser(-1.,1.);
   hDummy->Draw();
   cout << "Done... now plotting" << endl;
   cout << fCentroids.size() << endl;
@@ -391,7 +393,7 @@ void RecursiveClustering::VoronoiPlot()
 
 
 
-void RecursiveClustering::VoronoiPlot2()
+void RecursiveClustering::VoronoiPlot2(Int_t level)
 {
   vector<TGraph*> graphs; graphs.clear();
   vector<Double_t>* X = new vector<Double_t>[gIndex];
@@ -400,7 +402,7 @@ void RecursiveClustering::VoronoiPlot2()
   vector<TString> stringList; stringList.clear();
   for (Double_t x = -1; x < 1.; x = x + 1e-3){
       for (Double_t y = -1; y < 1.; y = y + 1e-3){
-	TString nam = mainCluster.FindSubClusterName(Point(x,y,-1), 2);
+	TString nam = mainCluster.FindSubClusterName(Point(x,y,-1), level);
 	vector<TString>::iterator itr = std::find( stringList.begin(), stringList.end(), nam);
 	if ( itr == stringList.end()){
 	  stringList.push_back(nam);
@@ -414,11 +416,14 @@ void RecursiveClustering::VoronoiPlot2()
 
   TCanvas* c = new TCanvas();
   c->cd();
+  gStyle->SetOptStat(0);
   TH1F* hDummy = new TH1F("hDummy","",2,-1,1);
   hDummy->SetBinContent(1, 1.);
   hDummy->SetBinContent(2,-1.);
   hDummy->SetLineColor(kWhite);
+  hDummy->GetYaxis()->SetRangeUser(-1.,1.);
   hDummy->Draw();
+
 
   for (Int_t k = 0; k < gIndex; ++k){
     graphs.push_back(new TGraph( X[k].size(), &X[k][0], &Y[k][0] ));

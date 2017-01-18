@@ -13,6 +13,7 @@ class kMeansWeights
   void ScatterPlot();
   void makeHistos();
   void MCScatterPlots();
+  void VoronoiPlot();
  protected:
   Int_t      fK;     // number of clusters
   TString     fKname; // number of clusters (string)

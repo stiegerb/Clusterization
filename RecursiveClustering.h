@@ -54,7 +54,7 @@ class RecursiveClustering
   ~RecursiveClustering() {}
   void makeHistos();
   void VoronoiPlot();
-  void VoronoiPlot2();
+  void VoronoiPlot2(Int_t);
   void     Test();
   
  protected:

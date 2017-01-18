@@ -9,6 +9,7 @@
 #include "TH1.h"
 #include "THStack.h"
 #include "TCanvas.h"
+#include "TStyle.h"
 #include <sstream>
 
 using namespace std;
@@ -358,4 +359,42 @@ void kMeansWeights::MCScatterPlots()
   
   
   return;
+}
+
+
+void kMeansWeights::VoronoiPlot()
+{
+  vector<TGraph*> graphs; graphs.clear();
+  vector<Double_t>* X = new vector<Double_t>[fK];
+  vector<Double_t>* Y = new vector<Double_t>[fK]; 
+
+  cout << "Calculating points" << endl;
+  for (Double_t x = -1; x < 1.; x = x + 1e-3){
+    
+      for (Double_t y = -1; y < 1.; y = y + 1e-3){
+	Int_t k = GetCluster(x,y);
+	X[k].push_back(x);
+	Y[k].push_back(y);	
+      }
+  }
+
+
+
+  TCanvas* c = new TCanvas();
+  c->cd();
+  gStyle->SetOptStat(0);
+  TH1F* hDummy = new TH1F("hDummy","",2,-1,1);
+  hDummy->SetBinContent(1, 1.);
+  hDummy->SetBinContent(2,-1.);
+  hDummy->SetLineColor(kWhite);
+  hDummy->GetYaxis()->SetRangeUser(-1.,1.);
+  hDummy->Draw();
+
+  for (Int_t k = 0; k < fK; ++k){
+    graphs.push_back(new TGraph( X[k].size(), &X[k][0], &Y[k][0] ));
+    graphs[k]->SetMarkerColor(k+1);    
+    graphs[k]->SetMarkerStyle(6);
+    graphs[k]->Draw("PSAME");
+  }  
+
 }

@@ -34,8 +34,6 @@ void kMeansWeights::readFromFiles()
   while (f){
     Double_t x = 0; Double_t y = 0; Double_t w = 0;
     f >> x >> y >> w;
-    if ( TMath::Abs(x) > 80. ) continue;
-    if ( TMath::Abs(y) > 80. ) continue;
     if (count%2 == 0){
       fX.push_back(x);
       fY.push_back(y);
@@ -283,12 +281,12 @@ void kMeansWeights::makeHistos()
   TH1F* hTTbOld = new TH1F("hTTbOld","", fK, -0.5, fK-0.5);
   TH1F* hTTHOld = new TH1F("hTTHOld","", fK, -0.5, fK-0.5);
   TH1F* hTTWOld = new TH1F("hTTWOld","", fK, -0.5, fK-0.5);
-  
+
   for (int n = 0; n < fTTbarX.size(); ++n){
     hTTb->Fill( GetCluster(fTTbarX[n], fTTbarY[n]), fTTbarW[n]);
     hTTbOld->Fill( classicalBinning(fTTbarX[n], fTTbarY[n]), fTTbarW[n]);
   }
-  
+  cout << hTTbOld->Integral() << " " << hTTbOld->GetEntries() << endl;
   for (int n = 0; n < fTTHX.size(); ++n){
     hTTH->Fill( GetCluster(fTTHX[n], fTTHY[n]), fTTHW[n]);
     hTTHOld->Fill( classicalBinning(fTTHX[n], fTTHY[n]), fTTHW[n]);
@@ -320,10 +318,10 @@ void kMeansWeights::makeHistos()
   TH1F*	hTTHOld2 = (TH1F*) hTTHOld->Clone("hTTHOld2");
   TH1F*	hTTWOld2 = (TH1F*) hTTWOld->Clone("hTTWOld2");
   
-  hTTb2->Add(hTTW2); 
-  cout << "New " << hTTH2->KolmogorovTest(hTTb2,"M") << endl;
-  hTTbOld2->Add(hTTWOld2);
-  cout << "Old " << hTTHOld2->KolmogorovTest(hTTbOld2,"M") << endl;
+  // hTTb2->Add(hTTW2); 
+  // cout << "New " << hTTH2->KolmogorovTest(hTTb2,"M") << endl;
+  // hTTbOld2->Add(hTTWOld2);
+  // cout << "Old " << hTTHOld2->KolmogorovTest(hTTbOld2,"M") << endl;
     
   vector<TH1*> bkgs;
   bkgs.push_back(hTTbOld2);

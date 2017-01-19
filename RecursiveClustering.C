@@ -320,14 +320,14 @@ void RecursiveClustering::Test()
   TH1F* hTTH   = new TH1F("hTTH"  ,"",gIndex, -0.5, gIndex-0.5);
   THStack* mc  = new THStack("mc","mc");
   vector<Point>::iterator point;
-
+  cout << "TTbar size is " << fTTbarMC.size() << endl;
   for (point = fTTbarMC.begin(); point != fTTbarMC.end(); ++point)
     hTTbar->Fill( mainCluster.FindUnclusterizableCluster( *point), 37000*point->fW);
   for (point = fTTWMC.begin(); point != fTTWMC.end(); ++point)
     hTTW->Fill( mainCluster.FindUnclusterizableCluster( *point), 37000*point->fW);
   for (point = fTTHMC.begin(); point != fTTHMC.end(); ++point)
     hTTH->Fill( mainCluster.FindUnclusterizableCluster( *point), 37000*point->fW);
-
+  cout << hTTbar->Integral() << " " << hTTbar->GetEntries() << endl;
   hTTbar->SetFillColor( kRed     );
   hTTH->SetFillColor( kBlue    );
   hTTW->SetFillColor( kMagenta );

@@ -179,10 +179,10 @@ vector<Point> Cluster::recluster()
       if ( FindSubCluster( fTTH[n] ) == k) TTH.push_back( fTTH[n]);
     }
     for (int n = 0; n < fTTW.size(); ++n){
-      if ( FindSubCluster( fTTW[n] ) == k) TTW.push_back( fTTH[n]);
+      if ( FindSubCluster( fTTW[n] ) == k) TTW.push_back( fTTW[n]);
     }
     for (int n = 0; n < fTTbar.size(); ++n){
-      if ( FindSubCluster( fTTbar[n] ) == k) TTbar.push_back( fTTH[n]);
+      if ( FindSubCluster( fTTbar[n] ) == k) TTbar.push_back( fTTbar[n]);
     }
     if (TTH.size() == 0) fIsClusterizable = false;
     else if (TTbar.size() == 0) fIsClusterizable = false;

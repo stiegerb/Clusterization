@@ -1,5 +1,7 @@
 #include "kMeansWeights.h"
+#ifdef MAKESIMPLECARD_H
 #include "MakeSimpleCard.h"
+#endif
 #ifdef SIGNIFICANCE_H
 #include "Significance.h"
 #endif
@@ -326,6 +328,7 @@ void kMeansWeights::makeHistos()
   // hTTbOld2->Add(hTTWOld2);
   // cout << "Old " << hTTHOld2->KolmogorovTest(hTTbOld2,"M") << endl;
     
+#ifdef MAKESIMPLECARD_H
   vector<TH1*> bkgs;
   bkgs.push_back(hTTbOld2);
   bkgs.push_back(hTTWOld2);
@@ -337,14 +340,13 @@ void kMeansWeights::makeHistos()
   bkgs_c.push_back(hTTW2);
   MakeSimpleCard card_c(hTTH2, bkgs_c, "datacard_kmeansweights", 37000., false);
   card_c.doCard();
+#endif
 
   #ifdef SIGNIFICANCE_H
   Significance c;
   c.Test();
 #endif 
-  cout << "it works" << endl;
 
-  
   return;
 }
 

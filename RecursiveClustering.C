@@ -1,5 +1,9 @@
 #include "RecursiveClustering.h"
+#ifdef MAKESIMPLECARD_H
 #include "MakeSimpleCard.h"
+#else
+#include <TFile.h>
+#endif
 #ifdef SIGNIFICANCE_H
 #include "Significance.h"
 #endif
@@ -194,6 +198,13 @@ vector<Point> Cluster::recluster()
     else{
       if (37000*TTH.size()*TTH[0].fW < 5.)
 	fIsClusterizable = false;
+#ifdef SIGNIFICANCE_H
+      vector<double> yields;
+      yields.push_back(37000*TTH.size()*TTH[0].fW);
+      yields.push_back(37000*(TTW.size()*TTW[0].fW + TTbar.size()*TTbar[0].fW));
+      Significance c(yields);
+      cout << "k==" << k << ": punzi(" << getSignificance("punzi") << "), approxpunzi(" << getSignificance("approxpunzi") << "), pseudosearch(" << getSignificance("pseudosearch") << "), pseudodiscovery(" << getSignificance("pseudodiscovery") << ")" << endl;
+#endif
     }
     Double_t tth = 0;
     Double_t ttw = 0;
@@ -350,14 +361,15 @@ void RecursiveClustering::Test()
   Significance c;
   c.Test();
 #endif 
-  cout << "it works" << endl;
-  
+
+#ifdef MAKESIMPLECARD_H  
   vector<TH1*> bkgs;
   bkgs.push_back(hTTbar);
   bkgs.push_back(hTTW  );
   //  MakeSimpleCard card(hTTH, bkgs, "datacard_newBinning", 37000., false);
   MakeSimpleCard card(hTTH, bkgs, "datacard_recursiveclustering", 1., false);
   card.doCard();
+#endif
 
   return;
 }

@@ -45,6 +45,7 @@ class Cluster
   Int_t    fK;
   Int_t    FindSubCluster( Point, bool verbose=false );
   Double_t d(Double_t, Double_t, Double_t, Double_t);
+
 };
 
 class RecursiveClustering
@@ -73,7 +74,7 @@ class RecursiveClustering
   Double_t d(Double_t, Double_t, Double_t, Double_t);
   void     readFromFiles();
   void     StartTheThing();
-
+  void     StoreToFile();
 };
 
 

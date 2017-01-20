@@ -7,6 +7,7 @@
 #include "TMath.h"
 #include "TGraph.h"
 #include "TH1.h"
+#include "TH2.h"
 #include "THStack.h"
 #include "TCanvas.h"
 #include <sstream>
@@ -248,6 +249,7 @@ void RecursiveClustering::StartTheThing()
 {
   mainCluster = Cluster(fTTbar, fTTH, fTTW, fK, "A", Point(9999,99999,-1));
   fCentroids = mainCluster.recluster();
+  StoreToFile();
 }
 
 void RecursiveClustering::readFromFiles()
@@ -349,6 +351,24 @@ void RecursiveClustering::Test()
   card.doCard();
 
   return;
+}
+
+void RecursiveClustering::StoreToFile()
+{
+  TFile* binning = TFile::Open("binning.root","recreate");
+  TH2F*  hBinning = new TH2F("hBinning","",1000,-1.,1.,1000,-1.,1.);
+  for (Int_t binx = 0; binx < hBinning->GetXaxis()->GetNbins(); ++binx){
+      for (Int_t biny = 0; biny < hBinning->GetYaxis()->GetNbins(); ++biny){
+	Double_t x  = hBinning->GetXaxis()->GetBinCenter(binx);
+	Double_t y  = hBinning->GetYaxis()->GetBinCenter(biny);
+	Int_t bin = hBinning->GetBin(binx,biny);
+	hBinning->SetBinContent(bin, mainCluster.FindUnclusterizableCluster(Point(x,y,-1)));
+      }
+  }
+  hBinning->Write();
+  binning->Close();
+
+
 }
 
 

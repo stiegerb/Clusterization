@@ -285,17 +285,17 @@ void kMeansWeights::makeHistos()
   TH1F* hTTHOld = new TH1F("hTTHOld","", fK, -0.5, fK-0.5);
   TH1F* hTTWOld = new TH1F("hTTWOld","", fK, -0.5, fK-0.5);
 
-  for (int n = 0; n < fTTbarX.size(); ++n){
+  for (size_t n = 0; n < fTTbarX.size(); ++n){
     hTTb->Fill( GetCluster(fTTbarX[n], fTTbarY[n]), fTTbarW[n]);
     hTTbOld->Fill( classicalBinning(fTTbarX[n], fTTbarY[n]), fTTbarW[n]);
   }
   cout << hTTbOld->Integral() << " " << hTTbOld->GetEntries() << endl;
-  for (int n = 0; n < fTTHX.size(); ++n){
+  for (size_t n = 0; n < fTTHX.size(); ++n){
     hTTH->Fill( GetCluster(fTTHX[n], fTTHY[n]), fTTHW[n]);
     hTTHOld->Fill( classicalBinning(fTTHX[n], fTTHY[n]), fTTHW[n]);
     
   }
-  for (int n = 0; n < fTTWX.size(); ++n){
+  for (size_t n = 0; n < fTTWX.size(); ++n){
     hTTW->Fill( GetCluster(fTTWX[n], fTTWY[n]), fTTWW[n]);
     hTTWOld->Fill( classicalBinning(fTTWX[n], fTTWY[n]), fTTWW[n]);
   }

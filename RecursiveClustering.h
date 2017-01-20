@@ -42,8 +42,8 @@ class Cluster
 
   void     MakeAssignment();
   Int_t    CalculateCentroids();
-  Int_t    fK;
-  Int_t    FindSubCluster( Point, bool verbose=false );
+  UInt_t    fK;
+  UInt_t    FindSubCluster( Point, bool verbose=false );
   Double_t d(Double_t, Double_t, Double_t, Double_t);
 
 };

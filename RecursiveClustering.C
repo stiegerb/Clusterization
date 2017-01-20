@@ -55,17 +55,17 @@ void Cluster::MakeAssignment()
 {
   fTgt.clear();
   // Assigns each data point to its cluster :)
-  for (int n = 0; n < fData.size(); ++n){
+  for (size_t n = 0; n < fData.size(); ++n){
     fTgt.push_back( FindSubCluster( fData[n] ));
   }
 }
 
-Int_t Cluster::FindSubCluster( Point point , bool verbose)
+UInt_t Cluster::FindSubCluster( Point point , bool verbose)
 {
   if (verbose ) cout << "Finding subcluster" << endl;
   Int_t cluster = -1;
   Double_t dist = 10000;
-  for (int k = 0; k < fCentroids.size(); ++k){
+  for (size_t k = 0; k < fCentroids.size(); ++k){
     if (verbose ) cout << "Checking centroid " << fCentroids[k] << endl;
     Double_t dst = d( point.fX, point.fY, fCentroids[k].fX, fCentroids[k].fY);
     if (dst < dist){
@@ -116,14 +116,14 @@ Int_t Cluster::CalculateCentroids()
   vector<Double_t> fMWght;
   vector<Point> fOldCentroids = fCentroids;
 
-  for (int k = 0; k < fCentroids.size(); ++k){
+  for (size_t k = 0; k < fCentroids.size(); ++k){
     fCentroids[k].fX = 0;
     fCentroids[k].fY = 0;
     fCentroids[k].fW = -1000000; // weights should never be used for centroids
     fMWght.push_back(0);
   }
 
-  for (int n = 0; n < fData.size(); ++n){
+  for (size_t n = 0; n < fData.size(); ++n){
     fCentroids[fTgt[n]].fX    +=  fData[n].fW * fData[n].fX;
     fCentroids[fTgt[n]].fY    +=  fData[n].fW * fData[n].fY;
     fMWght[fTgt[n]] +=  fData[n].fW;
@@ -131,7 +131,7 @@ Int_t Cluster::CalculateCentroids()
 
   Double_t di = 0;
   
-  for (int k = 0; k < fCentroids.size(); ++k){
+  for (size_t k = 0; k < fCentroids.size(); ++k){
     fCentroids[k].fX /= fMWght[k];
     fCentroids[k].fY /= fMWght[k];
     di += d(fCentroids[k].fX,fCentroids[k].fY, fOldCentroids[k].fX, fOldCentroids[k].fY);
@@ -155,7 +155,7 @@ vector<Point> Cluster::recluster()
   Double_t minY = (*min_element(fData.begin(), fData.end(),SortY)).fY;
 
   // Random inizialitation of centroids
-  for (int k = 0; k < fK; ++k){
+  for (unsigned int k = 0; k < fK; ++k){
     Point centroid( r->Uniform(minX, maxX), r->Uniform(minY, maxY), -1);
     fCentroids.push_back(centroid);
   }
@@ -175,17 +175,17 @@ vector<Point> Cluster::recluster()
   
   
   vector<Point> subCentroidList; subCentroidList.clear();
-  for (int k = 0; k < fK; ++k){
+  for (unsigned int k = 0; k < fK; ++k){
     vector<Point> TTbar; TTbar.clear();
     vector<Point> TTW;   TTW.clear();
     vector<Point> TTH;   TTH.clear();
-    for (int n = 0; n < fTTH.size(); ++n){
+    for (size_t n = 0; n < fTTH.size(); ++n){
       if ( FindSubCluster( fTTH[n] ) == k) TTH.push_back( fTTH[n]);
     }
-    for (int n = 0; n < fTTW.size(); ++n){
+    for (size_t n = 0; n < fTTW.size(); ++n){
       if ( FindSubCluster( fTTW[n] ) == k) TTW.push_back( fTTW[n]);
     }
-    for (int n = 0; n < fTTbar.size(); ++n){
+    for (size_t n = 0; n < fTTbar.size(); ++n){
       if ( FindSubCluster( fTTbar[n] ) == k) TTbar.push_back( fTTbar[n]);
     }
     if (TTH.size() == 0) fIsClusterizable = false;
@@ -219,11 +219,11 @@ vector<Point> Cluster::recluster()
     else{
       cout << "Apparently subcluster " << k << " from " << fName 
 	   << " is huge!!! (thats what she said), so theres not showstopper not to keep clustering" << endl;
-      Cluster subCluster = Cluster( TTbar,  TTH  ,  TTW, fK, fName + Form("%d",k), fCentroids[k]);
+      Cluster subCluster = Cluster( TTbar,  TTH  ,  TTW, fK, fName + Form("%u",k), fCentroids[k]);
       SubClusters.push_back(subCluster);
     }
   }
-  for (int k = 0; k < SubClusters.size(); ++k){
+  for (size_t k = 0; k < SubClusters.size(); ++k){
       cout << "Cluster " << fName << " is huge!!! (thats what she said)" << endl;
       vector<Point> listOfSubcentroids = SubClusters[k].recluster();
       subCentroidList.insert( subCentroidList.end(), listOfSubcentroids.begin(), listOfSubcentroids.end());

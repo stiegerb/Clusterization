@@ -1,5 +1,8 @@
 #include "kMeansWeights.h"
 #include "MakeSimpleCard.h"
+#ifdef SIGNIFICANCE_H
+#include "Significance.h"
+#endif
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -334,6 +337,12 @@ void kMeansWeights::makeHistos()
   bkgs_c.push_back(hTTW2);
   MakeSimpleCard card_c(hTTH2, bkgs_c, "datacard_kmeansweights", 37000., false);
   card_c.doCard();
+
+  #ifdef SIGNIFICANCE_H
+  Significance c;
+  c.Test();
+#endif 
+  cout << "it works" << endl;
 
   
   return;

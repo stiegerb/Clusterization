@@ -1,5 +1,8 @@
 #include "RecursiveClustering.h"
 #include "MakeSimpleCard.h"
+#ifdef SIGNIFICANCE_H
+#include "Significance.h"
+#endif
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -343,6 +346,12 @@ void RecursiveClustering::Test()
 	 << hTTH  ->GetBinContent(k+1) << endl;
   }
 
+#ifdef SIGNIFICANCE_H
+  Significance c;
+  c.Test();
+#endif 
+  cout << "it works" << endl;
+  
   vector<TH1*> bkgs;
   bkgs.push_back(hTTbar);
   bkgs.push_back(hTTW  );

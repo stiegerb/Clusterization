@@ -145,6 +145,7 @@ Int_t Cluster::CalculateCentroids()
 
 vector<Point> Cluster::recluster()
 {
+  cout << "Reclustering " << endl;
   TRandom3* r = new TRandom3();
   Double_t maxX = (*max_element(fData.begin(), fData.end(),SortX)).fX;
   Double_t minX = (*min_element(fData.begin(), fData.end(),SortX)).fX;
@@ -155,6 +156,7 @@ vector<Point> Cluster::recluster()
   for (int k = 0; k < fK; ++k){
     Point centroid( r->Uniform(minX, maxX), r->Uniform(minY, maxY), -1);
     fCentroids.push_back(centroid);
+    cout << centroid << endl;
   }
   // Cluster assignation
   Int_t maxIt = 999999;
@@ -164,7 +166,6 @@ vector<Point> Cluster::recluster()
     it++;
     MakeAssignment();
     if (CalculateCentroids() < 0) break;
-
   }
   cout << "Centroids are " << "(" << fCentroids[0].fX << "," << fCentroids[0].fY 
        << ")" << endl;
@@ -191,6 +192,8 @@ vector<Point> Cluster::recluster()
     else{
       if (37000*TTH.size()*TTH[0].fW < 5.)
 	fIsClusterizable = false;
+      if (37000*TTbar.size()*TTbar[0].fW < 5.)
+	fIsClusterizable = false;
     }
     Double_t tth = 0;
     Double_t ttw = 0;
@@ -216,7 +219,7 @@ vector<Point> Cluster::recluster()
     else{
       cout << "Apparently subcluster " << k << " from " << fName 
 	   << " is huge!!! (thats what she said), so theres not showstopper not to keep clustering" << endl;
-      Cluster subCluster = Cluster( TTbar,  TTH  ,  TTW, fK, fName + Form("%d",k), fCentroids[k]);
+      Cluster subCluster = Cluster( TTbar,  TTH  ,  TTW, 2, fName + Form("%d",k), fCentroids[k]);
       SubClusters.push_back(subCluster);
     }
   }
@@ -256,11 +259,14 @@ void RecursiveClustering::readFromFiles()
 {
   
   fTTbar.clear(); fTTH.clear(); fTTW.clear();
-  ifstream f; f.open("data/TTSingleLeptonMarco.txt");
+  //  ifstream f; f.open("data/TTSingleLeptonMarco.txt");
+  ifstream f; f.open("data/ttbar3l.txt");
   Int_t count = 0;
   while (f){
     Double_t x = 0; Double_t y = 0; Double_t w = 0;
     f >> x >> y >> w;
+    if ( TMath::Abs(x) > 2.) continue;
+    if ( TMath::Abs(y) > 2.) continue;
     Point point = Point(x,y,2*w);
     if (count%2 == 0)
       fTTbar.push_back(point);
@@ -269,11 +275,16 @@ void RecursiveClustering::readFromFiles()
     count++;
   }
   f.close();
-  
-  f.open("data/ttH.txt");
+  cout << "TTbar events " << fTTbar.size() << endl;
+  //  f.open("data/ttH.txt");
+  f.open("data/tth3l.txt");
   while (f){
     Double_t x = 0; Double_t y = 0; Double_t w = 0;
     f >> x >> y >> w;
+    if (w == 0) continue;
+    if ( TMath::Abs(x) > 2.) continue;
+    if ( TMath::Abs(y) > 2.) continue;
+
     Point point = Point(x,y,2*w);
     if (count%2 == 0)
       fTTH.push_back(point);
@@ -282,11 +293,15 @@ void RecursiveClustering::readFromFiles()
     count++;
   }
   f.close();
-
-  f.open("data/ttw.txt");
+  cout << "TTH events " << fTTH.size() << endl;
+  f.open("data/ttw3l.txt");
   while (f){
     Double_t x = 0; Double_t y = 0; Double_t w = 0;
     f >> x >> y >> w;
+    if (w == 0) continue;
+    if ( TMath::Abs(x) > 2.) continue;
+    if ( TMath::Abs(y) > 2.) continue;
+
     Point point = Point(x,y,2*w);
     if (count%2 == 0)
       fTTW.push_back(point);
@@ -346,7 +361,7 @@ void RecursiveClustering::Test()
   vector<TH1*> bkgs;
   bkgs.push_back(hTTbar);
   bkgs.push_back(hTTW  );
-  //  MakeSimpleCard card(hTTH, bkgs, "datacard_newBinning", 37000., false);
+
   MakeSimpleCard card(hTTH, bkgs, "datacard_recursiveclustering", 1., false);
   card.doCard();
 
@@ -355,7 +370,7 @@ void RecursiveClustering::Test()
 
 void RecursiveClustering::StoreToFile()
 {
-  TFile* binning = TFile::Open("binning.root","recreate");
+  TFile* binning = TFile::Open("/nfs/fanae/user/sscruz/TTH/CMSSW_8_0_19/src/CMGTools/TTHAnalysis/python/plotter/ttH-multilepton/binning.root","recreate");
   TH2F*  hBinning = new TH2F("hBinning","",1000,-1.,1.,1000,-1.,1.);
   for (Int_t binx = 0; binx < hBinning->GetXaxis()->GetNbins(); ++binx){
       for (Int_t biny = 0; biny < hBinning->GetYaxis()->GetNbins(); ++biny){

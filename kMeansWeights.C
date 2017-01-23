@@ -1,5 +1,10 @@
 #include "kMeansWeights.h"
+#ifdef MAKESIMPLECARD_H
 #include "MakeSimpleCard.h"
+#endif
+#ifdef SIGNIFICANCE_H
+#include "Significance.h"
+#endif
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -282,17 +287,17 @@ void kMeansWeights::makeHistos()
   TH1F* hTTHOld = new TH1F("hTTHOld","", fK, -0.5, fK-0.5);
   TH1F* hTTWOld = new TH1F("hTTWOld","", fK, -0.5, fK-0.5);
 
-  for (int n = 0; n < fTTbarX.size(); ++n){
+  for (size_t n = 0; n < fTTbarX.size(); ++n){
     hTTb->Fill( GetCluster(fTTbarX[n], fTTbarY[n]), fTTbarW[n]);
     hTTbOld->Fill( classicalBinning(fTTbarX[n], fTTbarY[n]), fTTbarW[n]);
   }
   cout << hTTbOld->Integral() << " " << hTTbOld->GetEntries() << endl;
-  for (int n = 0; n < fTTHX.size(); ++n){
+  for (size_t n = 0; n < fTTHX.size(); ++n){
     hTTH->Fill( GetCluster(fTTHX[n], fTTHY[n]), fTTHW[n]);
     hTTHOld->Fill( classicalBinning(fTTHX[n], fTTHY[n]), fTTHW[n]);
     
   }
-  for (int n = 0; n < fTTWX.size(); ++n){
+  for (size_t n = 0; n < fTTWX.size(); ++n){
     hTTW->Fill( GetCluster(fTTWX[n], fTTWY[n]), fTTWW[n]);
     hTTWOld->Fill( classicalBinning(fTTWX[n], fTTWY[n]), fTTWW[n]);
   }
@@ -323,6 +328,7 @@ void kMeansWeights::makeHistos()
   // hTTbOld2->Add(hTTWOld2);
   // cout << "Old " << hTTHOld2->KolmogorovTest(hTTbOld2,"M") << endl;
     
+#ifdef MAKESIMPLECARD_H
   vector<TH1*> bkgs;
   bkgs.push_back(hTTbOld2);
   bkgs.push_back(hTTWOld2);
@@ -334,8 +340,13 @@ void kMeansWeights::makeHistos()
   bkgs_c.push_back(hTTW2);
   MakeSimpleCard card_c(hTTH2, bkgs_c, "datacard_kmeansweights", 37000., false);
   card_c.doCard();
+#endif
 
-  
+  #ifdef SIGNIFICANCE_H
+  Significance c;
+  c.Test();
+#endif 
+
   return;
 }
 

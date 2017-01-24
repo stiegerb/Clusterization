@@ -25,7 +25,7 @@ class MakeSimpleCard
   void FillObserved();
   void FillRates();
   void WriteShapes();
-  void DoStatVariation(TH1* shape);
+  void DoStatVariation(TH1* shape, TString basename);
   void WriteCard();
 
   bool debug_;

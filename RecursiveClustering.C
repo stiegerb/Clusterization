@@ -4,9 +4,9 @@
 #else
 #include <TFile.h>
 #endif
-#ifdef SIGNIFICANCE_H
+//#ifdef SIGNIFICANCE_H
 #include "Significance.h"
-#endif
+//#endif
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -150,7 +150,7 @@ Int_t Cluster::CalculateCentroids()
 }
 
 
-vector<Point> Cluster::recluster()
+std::pair<vector<Point>, vector<double> > Cluster::recluster()
 {
   cout << "Reclustering " << endl;
   TRandom3* r = new TRandom3();
@@ -180,6 +180,7 @@ vector<Point> Cluster::recluster()
   
   
   vector<Point> subCentroidList; subCentroidList.clear();
+  vector<double> significancesList; significancesList.clear();
   for (unsigned int k = 0; k < fK; ++k){
     vector<Point> TTbar; TTbar.clear();
     vector<Point> TTW;   TTW.clear();
@@ -199,13 +200,13 @@ vector<Point> Cluster::recluster()
     else{
       if (37000*TTH.size()*TTH[0].fW < 5.)
 	fIsClusterizable = false;
-#ifdef SIGNIFICANCE_H
-      vector<double> yields;
-      yields.push_back(37000*TTH.size()*TTH[0].fW);
-      yields.push_back(37000*(TTW.size()*TTW[0].fW + TTbar.size()*TTbar[0].fW));
-      Significance c(yields);
-      cout << "k==" << k << ": punzi(" << getSignificance("punzi") << "), approxpunzi(" << getSignificance("approxpunzi") << "), pseudosearch(" << getSignificance("pseudosearch") << "), pseudodiscovery(" << getSignificance("pseudodiscovery") << ")" << endl;
-#endif
+//#ifdef SIGNIFICANCE_H
+//      vector<double> yields;
+//      yields.push_back(36400*TTH.size()*TTH[0].fW);
+//      yields.push_back(36400*(TTW.size()*TTW[0].fW + TTbar.size()*TTbar[0].fW));
+//      Significance c(yields);
+//      cout << "k==" << k << ": punzi(" << c.getSignificance("punzi") << "), approxpunzi(" << c.getSignificance("approxpunzi") << "), pseudosearch(" << c.getSignificance("pseudosearch") << "), pseudodiscovery(" << c.getSignificance("pseudodiscovery") << ")" << endl;
+//#endif
       if(false)
         {
           cout << "Build datacard on the fly" << endl;
@@ -232,6 +233,7 @@ vector<Point> Cluster::recluster()
     if (TTH.size() > 0)   tth   = 36400 * TTH.size()  * TTH[0]  .fW;
     if (TTW.size() > 0)   ttw   = 36400 * TTW.size()  * TTW[0]  .fW;
     if (TTbar.size() > 0) ttbar = 36400 * TTbar.size()  * TTbar[0]  .fW;
+
     cout << "Expected events in the subcluster " << tth
 	 << " " << ttw << " " << ttbar << endl;
 
@@ -240,11 +242,17 @@ vector<Point> Cluster::recluster()
       cout << "This will be subcluster " << gIndex <<  endl;
       cout << "The centroid is " << fCentroid << endl;
       cout << "The name is " << fName << endl;
+      vector<double> yields;
+      yields.push_back(36400*TTH.size()*TTH[0].fW);
+      yields.push_back(36400*(TTW.size()*TTW[0].fW + TTbar.size()*TTbar[0].fW));
+      Significance c(yields);
+      cout << "The significance is " << c.getSignificance("punzi") << endl;
       SubClusters.clear();
       fIndex = gIndex;
       gIndex++;
       subCentroidList.clear();
       subCentroidList.push_back( fCentroid );
+      significancesList.push_back(c.getSignificance("punzi"));
       break;
     }
     else{
@@ -256,14 +264,18 @@ vector<Point> Cluster::recluster()
   }
   for (size_t k = 0; k < SubClusters.size(); ++k){
       cout << "Cluster " << fName << " is huge!!! (thats what she said)" << endl;
-      vector<Point> listOfSubcentroids = SubClusters[k].recluster();
+      pair<vector<Point>, vector<double> > listOfStuff = SubClusters[k].recluster();
+      vector<Point> listOfSubcentroids = listOfStuff.first;
+      vector<double> listOfSubSignificances = listOfStuff.second;
+      //vector<Point> listOfSubcentroids = SubClusters[k].recluster();
       subCentroidList.insert( subCentroidList.end(), listOfSubcentroids.begin(), listOfSubcentroids.end());
+      significancesList.insert( significancesList.end(), listOfSubSignificances.begin(), listOfSubSignificances.end());
   }
 
 
   delete r;
   cout << "Name and size of centroid list " << fName << " " << subCentroidList.size() << endl;
-  return subCentroidList;
+  return std::make_pair(subCentroidList, significancesList);
 
 }
 
@@ -283,7 +295,13 @@ RecursiveClustering::RecursiveClustering(Int_t k, Int_t nLep):
 void RecursiveClustering::StartTheThing()
 {
   mainCluster = Cluster(fTTbar, fTTH, fTTW, fK, "A", Point(9999,99999,-1));
-  fCentroids = mainCluster.recluster();
+  pair<vector<Point>, vector<double> > stuff = mainCluster.recluster();
+  fCentroids = stuff.first;
+  fSignificances = stuff.second;
+  //fCentroids = mainCluster.recluster();
+  cout << "Final list of figures of significances: " << endl;
+  for(auto& significance : fSignificances)
+    cout << significance << endl;
   StoreToFile();
 }
 
@@ -389,21 +407,22 @@ void RecursiveClustering::Test()
 	 << hTTH  ->GetBinContent(k+1) << endl;
   }
 
-#ifdef SIGNIFICANCE_H
-  Significance c;
-  c.Test();
-#endif 
+//#ifdef SIGNIFICANCE_H
+//  cout << "Now significance test" << endl;
+//  Significance c;
+//  c.Test();
+//#endif 
+//
+//#ifdef MAKESIMPLECARD_H  
+//  cout << "Now simple card test " << endl;
+//  vector<TH1*> bkgs;
+//  bkgs.push_back(hTTbar);
+//  bkgs.push_back(hTTW  );
+//
+//  MakeSimpleCard card(hTTH, bkgs, "datacard_recursiveclustering", 1., false);
+//  card.doCard();
+//#endif
 
-#ifdef MAKESIMPLECARD_H  
-  vector<TH1*> bkgs;
-  bkgs.push_back(hTTbar);
-  bkgs.push_back(hTTW  );
-
-  MakeSimpleCard card(hTTH, bkgs, "datacard_recursiveclustering", 1., false);
-  card.doCard();
-#endif
-
-  return;
 }
 
 void RecursiveClustering::StoreToFile()

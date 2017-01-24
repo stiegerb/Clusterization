@@ -1,5 +1,6 @@
 #ifndef RECURSIVECLUSTERING_H
 #define RECURSIVECLUSTERING_H
+#include <utility>
 
 #include"TString.h"
 class Point
@@ -20,7 +21,7 @@ class Cluster
   Cluster(){}
   Cluster( vector<Point> , vector<Point>, vector<Point>, Int_t, TString, Point  );
   ~Cluster() { } 
-  vector<Point> recluster();
+  std::pair<vector<Point>, vector<double> > recluster();
   Int_t    FindUnclusterizableCluster( Point );
   TString  FindSubClusterName(Point, Int_t);
   TString  GetName(){ return fName; }
@@ -32,6 +33,7 @@ class Cluster
   vector<Point> fData ;
 
   vector<Point> fCentroids;
+
   Point fCentroid;
   vector<Int_t> fTgt;
   vector<Cluster> SubClusters;
@@ -67,6 +69,7 @@ class RecursiveClustering
   vector<Point> fTTHMC;
   vector<Point> fTTWMC;
   vector<Point> fCentroids;
+  vector<double> fSignificances;
   Int_t fK;
   Int_t nLep_; // Choose between 2lss and 3l input
 

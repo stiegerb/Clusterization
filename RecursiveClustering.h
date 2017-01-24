@@ -59,7 +59,9 @@ class RecursiveClustering
   void VoronoiPlot();
   void VoronoiPlot2(Int_t);
   void     Test();
-  
+  Double_t SignificanceAtLevel(Int_t);
+  void SignificancesEachLevel();
+
  protected:
   // Monte Carlo
   vector<Point>  fTTbar;  

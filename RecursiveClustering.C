@@ -1,9 +1,6 @@
 #include "RecursiveClustering.h"
-#ifdef MAKESIMPLECARD_H
 #include "MakeSimpleCard.h"
-#else
 #include <TFile.h>
-#endif
 //#ifdef SIGNIFICANCE_H
 #include "Significance.h"
 //#endif
@@ -20,6 +17,8 @@
 #include <sstream>
 #include <TString.h> 
 #include "TStyle.h"
+#include "TSystem.h"
+#include "TTree.h"
 
 using namespace std;
 
@@ -215,14 +214,14 @@ std::pair<vector<Point>, vector<double> > Cluster::recluster()
           cout << "Then output binning to histogram" << endl;
           cout << "Write temporary card" << endl;
           
-#ifdef MAKESIMPLECARD_H  
-          vector<TH1*> bkgs;
-          bkgs.push_back(hTTbar);
-          bkgs.push_back(hTTW  );
+// #ifdef MAKESIMPLECARD_H  
+//           vector<TH1*> bkgs;
+//           bkgs.push_back(hTTbar);
+//           bkgs.push_back(hTTW  );
           
-          MakeSimpleCard card(hTTH, bkgs, "datacard_recursiveclustering", 1., false);
-          card.doCard();
-#endif
+//           MakeSimpleCard card(hTTH, bkgs, "datacard_recursiveclustering", 1., false);
+//           card.doCard();
+// #endif
           cout << "Compute limit" << endl;
           cout << "Remove temporary card" << endl;
           cout << "Decide whether the event is clusterizable (first approx: output list, to check whether significance improves or not" << endl;
@@ -550,5 +549,82 @@ void RecursiveClustering::VoronoiPlot2(Int_t level)
     graphs[k]->SetMarkerStyle(6);
     graphs[k]->Draw("PSAME");
   }  
+
+}
+
+
+
+Double_t RecursiveClustering::SignificanceAtLevel(Int_t level)
+{
+  vector<TGraph*> graphs; graphs.clear();
+  vector<TString> stringList; stringList.clear();
+  vector<Point>::iterator point; 
+  TH1F* hTTbar = new TH1F(Form("hTTbarLevel%d",level) , "", gIndex, -0.5, gIndex-0.5);
+  TH1F* hTTH   = new TH1F(Form("hTTHLevel%d",level)   , "", gIndex, -0.5, gIndex-0.5);
+  TH1F* hTTW   = new TH1F(Form("hTTWLevel%d",level)   , "", gIndex, -0.5, gIndex-0.5);
+
+  for (point = fTTbar.begin(); point != fTTbar.end(); ++point){
+	TString nam = mainCluster.FindSubClusterName(*point, level);
+	vector<TString>::iterator itr = std::find( stringList.begin(), stringList.end(), nam);
+	if ( itr == stringList.end()){
+	  stringList.push_back(nam);
+	}
+	itr = std::find( stringList.begin(), stringList.end(), nam);
+	hTTbar->Fill(itr-stringList.begin(), point->fW);
+  }
+
+  for (point = fTTW.begin(); point != fTTW.end(); ++point){
+	TString nam = mainCluster.FindSubClusterName(*point, level);
+	vector<TString>::iterator itr = std::find( stringList.begin(), stringList.end(), nam);
+	if ( itr == stringList.end()){
+	  stringList.push_back(nam);
+	}
+	itr = std::find( stringList.begin(), stringList.end(), nam);
+	hTTW->Fill(itr-stringList.begin(), point->fW);
+  }
+
+  for (point = fTTH.begin(); point != fTTH.end(); ++point){
+	TString nam = mainCluster.FindSubClusterName(*point, level);
+	vector<TString>::iterator itr = std::find( stringList.begin(), stringList.end(), nam);
+	if ( itr == stringList.end()){
+	  stringList.push_back(nam);
+	}
+	itr = std::find( stringList.begin(), stringList.end(), nam);
+	hTTH->Fill(itr-stringList.begin(), point->fW);
+  }
+  vector<TH1*> bkgs;
+  bkgs.push_back(hTTbar);
+  bkgs.push_back(hTTW  );  
+  MakeSimpleCard card(hTTH, bkgs, Form("datacard_Level_%d",level), 37000., false);
+  card.doCard();
+  gSystem->Exec(Form("combine -M Asymptotic -m %d datacard_Level_%d.txt",level,level));
+  TFile* output = TFile::Open(Form("higgsCombineTest.Asymptotic.mH%d.root",level));
+  TTree* Tlimit = (TTree*) output->Get("limit");
+  Double_t limit = 0;
+  Float_t quantileExpected = 0;
+  Tlimit->SetBranchAddress("limit",&limit);
+  Tlimit->SetBranchAddress("quantileExpected", &quantileExpected);
+  for (Int_t entry = 0; entry < Tlimit->GetEntries(); entry++){
+    Tlimit->GetEntry(entry);
+    if (quantileExpected > 0.49 && quantileExpected < 0.51){
+      cout << "Expected upper limit for level " << level <<  "  " << limit << endl;
+      break;
+    }
+  }
+    
+  return limit;
+}
+
+
+void RecursiveClustering::SignificancesEachLevel()
+{
+  TH1F* h = new TH1F("h","",7, 0.5,7.5);
+  for (int k = 1; k < 8; ++k){
+    h->SetBinContent(k, SignificanceAtLevel(k));
+    h->SetBinError(k,0.);
+  }
+  
+  h->SetMarkerStyle(kFullCircle);
+  h->Draw("P");
 
 }

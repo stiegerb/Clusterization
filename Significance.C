@@ -1,6 +1,7 @@
 #include "Significance.h"
 #include <iostream>
 #include <TString.h>
+#include <TMath.h>
 
 Significance::Significance(std::vector<double> input):
   significance_(-9.),
@@ -46,6 +47,8 @@ double Significance::getSignificance(TString which, int a, int b)
     ComputePseudoSignificanceSearchOriented();
   else if(which=="pseudodiscovery")
     ComputePseudoSignificanceDiscoveryOriented();
+  else if (which=="pvalue")
+    PValue();
   else
     cout << "Please select an expression for the significance" << endl;
   
@@ -64,6 +67,11 @@ void Significance::ComputeApproximatedPunzi(int a)
   // Return eq.7 of arxiv:physics/0308063v2
   significance_ = S_/(a/2 + sqrt(B_));
 
+}
+
+void Significance::PValue()
+{
+  significance_ = TMath::Poisson( S_ + B_, B_);
 }
 
 void Significance::ComputePseudoSignificanceSearchOriented()

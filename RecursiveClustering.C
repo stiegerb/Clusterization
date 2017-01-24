@@ -247,13 +247,13 @@ std::pair<vector<Point>, vector<double> > Cluster::recluster()
       yields.push_back(36400*TTH.size()*TTH[0].fW);
       yields.push_back(36400*(TTW.size()*TTW[0].fW + TTbar.size()*TTbar[0].fW));
       Significance c(yields);
-      cout << "The significance is " << c.getSignificance("punzi") << endl;
+      cout << "The significance is " << c.getSignificance("pvalue") << endl;
       SubClusters.clear();
       fIndex = gIndex;
       gIndex++;
       subCentroidList.clear();
       subCentroidList.push_back( fCentroid );
-      significancesList.push_back(c.getSignificance("punzi"));
+      significancesList.push_back(c.getSignificance("pvalue"));
       break;
     }
     else{

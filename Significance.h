@@ -27,6 +27,7 @@ class Significance
   void ComputeApproximatedPunzi(int a);
   void ComputePseudoSignificanceSearchOriented();
   void ComputePseudoSignificanceDiscoveryOriented();
+  void PValue();
 };
 
 #endif

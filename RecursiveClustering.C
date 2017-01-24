@@ -181,6 +181,7 @@ std::pair<vector<Point>, vector<double> > Cluster::recluster()
   
   vector<Point> subCentroidList; subCentroidList.clear();
   vector<double> significancesList; significancesList.clear();
+  vector<double> partialSignificancesList; partialSignificancesList.clear();
   for (unsigned int k = 0; k < fK; ++k){
     vector<Point> TTbar; TTbar.clear();
     vector<Point> TTW;   TTW.clear();
@@ -268,13 +269,21 @@ std::pair<vector<Point>, vector<double> > Cluster::recluster()
       vector<Point> listOfSubcentroids = listOfStuff.first;
       vector<double> listOfSubSignificances = listOfStuff.second;
       //vector<Point> listOfSubcentroids = SubClusters[k].recluster();
+      //double partialSignificance(1.);
+      //for(auto& isignif : listOfSubSignificances)
+      //  partialSignificance*=isignif;
+      //partialSignificancesList.push_back(partialSignificance);
       subCentroidList.insert( subCentroidList.end(), listOfSubcentroids.begin(), listOfSubcentroids.end());
       significancesList.insert( significancesList.end(), listOfSubSignificances.begin(), listOfSubSignificances.end());
   }
 
 
   delete r;
-  cout << "Name and size of centroid list " << fName << " " << subCentroidList.size() << endl;
+  double combinedSignificance(1.);
+  for(auto& isignif : significancesList)
+    combinedSignificance*=isignif;
+  cout << "Name, size, and combined significance of centroid list " << fName << ", " << subCentroidList.size() << ", " << combinedSignificance << endl;
+  
   return std::make_pair(subCentroidList, significancesList);
 
 }
@@ -299,9 +308,14 @@ void RecursiveClustering::StartTheThing()
   fCentroids = stuff.first;
   fSignificances = stuff.second;
   //fCentroids = mainCluster.recluster();
-  cout << "Final list of figures of significances: " << endl;
+  cout << "Final list of significances: " << endl;
+  double combinedSignificance(1.);
   for(auto& significance : fSignificances)
-    cout << significance << endl;
+    {
+      combinedSignificance*=significance;
+      cout << significance << endl;
+    }
+  cout << "Final combined significance: " << combinedSignificance << endl;
   StoreToFile();
 }
 

@@ -408,7 +408,7 @@ void RecursiveClustering::Test()
 
 void RecursiveClustering::StoreToFile()
 {
-  TFile* binning = TFile::Open("/nfs/fanae/user/sscruz/TTH/CMSSW_8_0_19/src/CMGTools/TTHAnalysis/python/plotter/ttH-multilepton/binning.root","recreate");
+  TFile* binning = TFile::Open("binning.root","recreate");
   TH2F*  hBinning = new TH2F("hBinning","",1000,-1.,1.,1000,-1.,1.);
   for (Int_t binx = 0; binx < hBinning->GetXaxis()->GetNbins(); ++binx){
       for (Int_t biny = 0; biny < hBinning->GetYaxis()->GetNbins(); ++biny){

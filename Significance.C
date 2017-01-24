@@ -48,7 +48,7 @@ double Significance::getSignificance(TString which, int a, int b)
   else if(which=="pseudodiscovery")
     ComputePseudoSignificanceDiscoveryOriented();
   else if (which=="pvalue")
-    PValue();
+    ComputePValue();
   else
     cout << "Please select an expression for the significance" << endl;
   
@@ -69,7 +69,7 @@ void Significance::ComputeApproximatedPunzi(int a)
 
 }
 
-void Significance::PValue()
+void Significance::ComputePValue()
 {
   significance_ = TMath::Poisson( S_ + B_, B_);
 }

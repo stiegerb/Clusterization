@@ -238,16 +238,16 @@ std::pair<vector<Point>, vector<double> > Cluster::recluster()
     cout << "Expected events in the subcluster " << tth
 	 << " " << ttw << " " << ttbar << endl;
 
+    vector<double> yields;
+    yields.push_back(36400*TTH.size()*TTH[0].fW);
+    yields.push_back(36400*(TTW.size()*TTW[0].fW + TTbar.size()*TTbar[0].fW));
+    Significance c(yields);
+    cout << "The significance is " << c.getSignificance("pvalue") << endl;
     if (!fIsClusterizable){
       cout << "Not clusterizable anymore " << endl;
       cout << "This will be subcluster " << gIndex <<  endl;
       cout << "The centroid is " << fCentroid << endl;
       cout << "The name is " << fName << endl;
-      vector<double> yields;
-      yields.push_back(36400*TTH.size()*TTH[0].fW);
-      yields.push_back(36400*(TTW.size()*TTW[0].fW + TTbar.size()*TTbar[0].fW));
-      Significance c(yields);
-      cout << "The significance is " << c.getSignificance("pvalue") << endl;
       SubClusters.clear();
       fIndex = gIndex;
       gIndex++;
@@ -282,6 +282,7 @@ std::pair<vector<Point>, vector<double> > Cluster::recluster()
   double combinedSignificance(1.);
   for(auto& isignif : significancesList)
     combinedSignificance*=isignif;
+  
   cout << "Name, size, and combined significance of centroid list " << fName << ", " << subCentroidList.size() << ", " << combinedSignificance << endl;
   
   return std::make_pair(subCentroidList, significancesList);
@@ -452,9 +453,21 @@ void RecursiveClustering::StoreToFile()
       }
   }
   hBinning->Write();
+
+
+  // Final significance per bin
+  double indexes[fSignificances.size()];
+  double signifs[fSignificances.size()];
+  for(int idx=0; idx<fSignificances.size(); ++idx)
+    {
+      indexes[idx]=idx;
+      signifs[idx]=fSignificances[idx];
+    }
+  TGraph* g = new TGraph(fSignificances.size(), indexes, signifs);
+  g->SetName("significancePerBin_finalSet");
+  g->Write();
+
   binning->Close();
-
-
 }
 
 

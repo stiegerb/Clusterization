@@ -17,7 +17,7 @@ class MakeSimpleCard
   ~MakeSimpleCard() {};
   
   void doCard();
-
+  
  protected:
 
   void Renormalize();
@@ -25,6 +25,7 @@ class MakeSimpleCard
   void FillObserved();
   void FillRates();
   void WriteShapes();
+  void DoStatVariation(TH1* shape, TString basename);
   void WriteCard();
 
   bool debug_;
@@ -33,6 +34,8 @@ class MakeSimpleCard
   TH1* sig_;
   vector<TH1*> bkg_;
   TH1* data_;
+  
+  vector<TH1*> statVariations_;
 
   TString cardName_;
 
@@ -42,7 +45,7 @@ class MakeSimpleCard
   double systBkg_;
   
   size_t nBkg_;
-
+  
   ofstream card_;
 
 };

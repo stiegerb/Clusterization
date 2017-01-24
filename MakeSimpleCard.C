@@ -1,6 +1,6 @@
 #include "MakeSimpleCard.h"
 
-
+#include <sstream>
 
 MakeSimpleCard::MakeSimpleCard(TH1* sig, vector<TH1*> bkg, TString cardName, double lumi, bool debug):
   sig_(sig),
@@ -130,6 +130,29 @@ void MakeSimpleCard::FillRates()
       card_ << "\n";
     }
   card_ << "--------------------------------\n";
+  // Now fill up statistical uncertainties
+  ostringstream convert;   // stream used for bin name conversion  
+  for(int ibin=1; ibin<=sig_->GetNbinsX(); ++ibin)
+    {
+      convert << ibin;      // insert the textual representation of 'Number' in the characters in the stream
+      TString binName(convert.str());
+      card_ << "bin" << binName << sig_->GetName() << "Stat shape    1   ";
+      for(auto& bkg : bkg_)
+        {
+          card_ << "      - ";
+        }
+      card_ << "\n";
+      for(auto& bkg : bkg_)
+        {
+          card_ << "bin" << binName << bkg->GetName() << "Stat shape     -  ";
+          for(auto& ibkg : bkg_)
+            {
+              ibkg == bkg ? card_ << "     1 " : card_ << "     - ";
+            }
+          card_ << "\n";
+        }
+    }
+  card_ << "--------------------------------\n";
   if(debug_) cout << "[MakeSimpleCard::FillRates] Method finished successfully." << endl;
 }
 
@@ -137,13 +160,40 @@ void MakeSimpleCard::WriteShapes()
 {
   shapesFile_ = TFile::Open(cardName_+"_shapes.root", "RECREATE");
 
+  TH1* sigClone = (TH1*) sig_->Clone(sig_->GetName()+TString("Stat"));
+  DoStatVariation(sigClone, sig_->GetName());
+  for(auto& bkg : bkg_)
+    {
+      TH1* bkgClone = (TH1*) bkg->Clone(bkg->GetName()+TString("Stat"));
+      DoStatVariation(bkgClone, bkg->GetName());
+    }
   data_->Write();
   sig_->Write();
   for(auto& bkg : bkg_)
     bkg->Write();
+  for(auto& variation : statVariations_)
+    variation->Write();
   
   shapesFile_->Close();
   if(debug_) cout << "[MakeSimpleCard::WriteShapes] Method finished successfully." << endl;
+}
+
+void MakeSimpleCard::DoStatVariation(TH1* shape, TString basename)
+{
+  ostringstream convert;   // stream used for bin name conversion
+  vector<TH1*> variations;
+  for(int ibin=1; ibin<=shape->GetNbinsX(); ++ibin)
+    {
+      convert << ibin;      // insert the textual representation of 'Number' in the characters in the stream
+      TString binName(convert.str());
+      TH1* tempUp   = (TH1*) shape->Clone(basename+TString("_bin")+binName+shape->GetName()+TString("Up"  ));
+      TH1* tempDown = (TH1*) shape->Clone(basename+TString("_bin")+binName+shape->GetName()+TString("Down"));
+      tempUp  ->SetBinContent(ibin, shape->GetBinContent(ibin)+shape->GetBinErrorUp(ibin));
+      tempDown->SetBinContent(ibin, shape->GetBinContent(ibin)-shape->GetBinErrorLow(ibin));
+      statVariations_.push_back(tempUp  );
+      statVariations_.push_back(tempDown);
+    }
+
 }
 
 void MakeSimpleCard::WriteCard()

@@ -206,7 +206,25 @@ vector<Point> Cluster::recluster()
       Significance c(yields);
       cout << "k==" << k << ": punzi(" << getSignificance("punzi") << "), approxpunzi(" << getSignificance("approxpunzi") << "), pseudosearch(" << getSignificance("pseudosearch") << "), pseudodiscovery(" << getSignificance("pseudodiscovery") << ")" << endl;
 #endif
-
+      if(false)
+        {
+          cout << "Build datacard on the fly" << endl;
+          cout << "First convert cluster list to binning" << endl;
+          cout << "Then output binning to histogram" << endl;
+          cout << "Write temporary card" << endl;
+          
+#ifdef MAKESIMPLECARD_H  
+          vector<TH1*> bkgs;
+          bkgs.push_back(hTTbar);
+          bkgs.push_back(hTTW  );
+          
+          MakeSimpleCard card(hTTH, bkgs, "datacard_recursiveclustering", 1., false);
+          card.doCard();
+#endif
+          cout << "Compute limit" << endl;
+          cout << "Remove temporary card" << endl;
+          cout << "Decide whether the event is clusterizable (first approx: output list, to check whether significance improves or not" << endl;
+        }
     }
     Double_t tth = 0;
     Double_t ttw = 0;
@@ -250,9 +268,10 @@ vector<Point> Cluster::recluster()
 }
 
 
-RecursiveClustering::RecursiveClustering(Int_t k)
+RecursiveClustering::RecursiveClustering(Int_t k, Int_t nLep):
+  fK(k),
+  nLep_(nLep)
 {
-  fK = k;
   readFromFiles();
   StartTheThing();
   
@@ -272,8 +291,8 @@ void RecursiveClustering::readFromFiles()
 {
   
   fTTbar.clear(); fTTH.clear(); fTTW.clear();
-  //  ifstream f; f.open("data/TTSingleLeptonMarco.txt");
-  ifstream f; f.open("data/ttbar3l.txt");
+  ifstream f;
+  nLep_==3 ? f.open("data/ttbar3l.txt") : f.open("data/TTSingleLeptonMarco.txt");
   Int_t count = 0;
   while (f){
     Double_t x = 0; Double_t y = 0; Double_t w = 0;
@@ -289,8 +308,7 @@ void RecursiveClustering::readFromFiles()
   }
   f.close();
   cout << "TTbar events " << fTTbar.size() << endl;
-  //  f.open("data/ttH.txt");
-  f.open("data/tth3l.txt");
+  nLep_==3 ? f.open("data/tth3l.txt") : f.open("data/ttH.txt");
   while (f){
     Double_t x = 0; Double_t y = 0; Double_t w = 0;
     f >> x >> y >> w;
@@ -307,7 +325,7 @@ void RecursiveClustering::readFromFiles()
   }
   f.close();
   cout << "TTH events " << fTTH.size() << endl;
-  f.open("data/ttw3l.txt");
+  nLep_==3 ? f.open("data/ttw3l.txt") : f.open("data/ttw.txt");
   while (f){
     Double_t x = 0; Double_t y = 0; Double_t w = 0;
     f >> x >> y >> w;

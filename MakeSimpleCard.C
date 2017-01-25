@@ -131,9 +131,9 @@ void MakeSimpleCard::FillRates()
     }
   card_ << "--------------------------------\n";
   // Now fill up statistical uncertainties
-  ostringstream convert;   // stream used for bin name conversion  
   for(int ibin=1; ibin<=sig_->GetNbinsX(); ++ibin)
     {
+      ostringstream convert;   // stream used for bin name conversion  
       convert << ibin;      // insert the textual representation of 'Number' in the characters in the stream
       TString binName(convert.str());
       card_ << "bin" << binName << sig_->GetName() << "Stat shape    1   ";
@@ -180,10 +180,11 @@ void MakeSimpleCard::WriteShapes()
 
 void MakeSimpleCard::DoStatVariation(TH1* shape, TString basename)
 {
-  ostringstream convert;   // stream used for bin name conversion
+
   vector<TH1*> variations;
   for(int ibin=1; ibin<=shape->GetNbinsX(); ++ibin)
     {
+      ostringstream convert;   // stream used for bin name conversion
       convert << ibin;      // insert the textual representation of 'Number' in the characters in the stream
       TString binName(convert.str());
       TH1* tempUp   = (TH1*) shape->Clone(basename+TString("_bin")+binName+shape->GetName()+TString("Up"  ));

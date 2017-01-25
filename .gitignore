@@ -6,3 +6,6 @@
 *_C.d
 *_C.so
 *_ACLiC_dict_rdict.pcm
+# Datacards
+datacard*.txt
+higgsCombine*root

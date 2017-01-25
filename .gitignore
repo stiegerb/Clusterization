@@ -8,4 +8,5 @@
 *_ACLiC_dict_rdict.pcm
 # Datacards
 datacard*.txt
+datacard*.root
 higgsCombine*root

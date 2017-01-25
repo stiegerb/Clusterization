@@ -1,5 +1,8 @@
 {
 
+  // Run me with:
+  // root -l -b runTrials.C
+
   gROOT->ProcessLine(".L MakeSimpleCard.C++");
   gROOT->ProcessLine(".L Significance.C++");
   gROOT->ProcessLine(".L TargettedClustering.C++");

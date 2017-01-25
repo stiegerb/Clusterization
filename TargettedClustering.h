@@ -22,7 +22,7 @@ class Cluster
   Cluster(){}
   Cluster( vector<Point> , vector<Point>, vector<Point>, Int_t, TString );
   ~Cluster() { } 
-  void recluster();
+  void recluster(UInt_t seed);
   Int_t    FindUnclusterizableCluster( Point );
   TString  FindSubClusterName(Point, Int_t);
   TString  GetName(){ return fName; }
@@ -58,7 +58,7 @@ class Cluster
 class TargettedClustering
 {
  public: 
-  TargettedClustering(Int_t k, Int_t nLep=2) ;
+  TargettedClustering(Int_t k, Int_t nLep=2, UInt_t seed=0) ;
   ~TargettedClustering() {}
   void makeHistos();
   void VoronoiPlot();
@@ -79,9 +79,9 @@ class TargettedClustering
   vector<double> fSignificances;
   Int_t fK;
   Int_t nLep_; // Choose between 2lss and 3l input
+  UInt_t seed_;
 
   Cluster mainCluster;
-  void     Init();
   Double_t d(Double_t, Double_t, Double_t, Double_t);
   void     readFromFiles();
   void     StartTheThing();

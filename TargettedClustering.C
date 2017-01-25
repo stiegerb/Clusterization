@@ -188,10 +188,10 @@ double Cluster::FOMforClusterCut( const double *par)
   return result;
 }
 
-void Cluster::recluster()
+void Cluster::recluster(UInt_t seed)
 {
   cout << "Reclustering " << endl;
-  TRandom3* r = new TRandom3();
+  TRandom3* r = new TRandom3(seed); // Default is surprisingly not zero, it is 4357. If you want unique seed, feed seed=0. Otherwise, manually
 
 
   fFormula = TFormula(fName+"formula", "[0] + [1]*x < y");
@@ -282,7 +282,7 @@ void Cluster::recluster()
 
   for (size_t k = 0; k < SubClusters.size(); ++k){
       cout << "Cluster " << fName << " is huge!!! (thats what she said)" << endl;
-      SubClusters[k].recluster();
+      SubClusters[k].recluster(seed+10000); // Maintain unicity up to 9999 bootstrap replicas
   }
 
 
@@ -292,15 +292,16 @@ void Cluster::recluster()
 }
 
 
-TargettedClustering::TargettedClustering(Int_t k, Int_t nLep):
+TargettedClustering::TargettedClustering(Int_t k, Int_t nLep, UInt_t seed):
   fK(k),
-  nLep_(nLep)
+  nLep_(nLep),
+  seed_(seed)
 {
   readFromFiles();
   StartTheThing();
   
   cout << "Produced " << gIndex << " clusters" << endl;
-  Point point(0.353811, 0.456623,-1.);
+  Point point(0.353811, 0.456623,-1.); // ? Is this needed/desirable?
   cout << "Point is " << mainCluster.FindUnclusterizableCluster(point) <<endl;
 }
 
@@ -310,7 +311,7 @@ void TargettedClustering::StartTheThing()
   gROOT->LoadMacro("MakeSimpleCard.C+");
 
   mainCluster = Cluster(fTTbar, fTTH, fTTW, fK, "A");
-  mainCluster.recluster();
+  mainCluster.recluster(seed_);
   cout << "Final list of significances: " << endl;
   double combinedSignificance(1.);
   for(auto& significance : fSignificances)
@@ -444,7 +445,10 @@ void TargettedClustering::Test()
 
 void TargettedClustering::StoreToFile()
 {
-  TFile* binning = TFile::Open("binning.root","recreate");
+  ostringstream convert;
+  convert << seed_;
+  TString seedName(convert.str());                                                                                                                         
+  TFile* binning = TFile::Open("binning"+seedName+".root","recreate");
   TH2F*  hBinning = new TH2F("hBinning","",1000,-1.,1.,1000,-1.,1.);
   for (Int_t binx = 0; binx < hBinning->GetXaxis()->GetNbins(); ++binx){
       for (Int_t biny = 0; biny < hBinning->GetYaxis()->GetNbins(); ++biny){
@@ -460,7 +464,7 @@ void TargettedClustering::StoreToFile()
   // Final significance per bin
   double indexes[fSignificances.size()];
   double signifs[fSignificances.size()];
-  for(int idx=0; idx<fSignificances.size(); ++idx)
+  for(size_t idx=0; idx<fSignificances.size(); ++idx)
     {
       indexes[idx]=idx;
       signifs[idx]=fSignificances[idx];
@@ -598,10 +602,10 @@ Double_t TargettedClustering::SignificanceAtLevel(Int_t level)
   vector<TH1*> bkgs;
   bkgs.push_back(hTTbar);
   bkgs.push_back(hTTW  );  
-  MakeSimpleCard card(hTTH, bkgs, Form("datacard_Level_%d",level), 37000., false);
+  MakeSimpleCard card(hTTH, bkgs, Form("datacard%d_Level_%d",seed_,level), 37000., false);
   card.doCard();
-  gSystem->Exec(Form("combine -M Asymptotic -m %d datacard_Level_%d.txt",level,level));
-  TFile* output = TFile::Open(Form("higgsCombineTest.Asymptotic.mH%d.root",level));
+  gSystem->Exec(Form("combine -M Asymptotic -n Trial%d -m %d datacard_Level_%d.txt",seed_,level,level));
+  TFile* output = TFile::Open(Form("higgsCombineTrial%d.Asymptotic.mH%d.root",seed_,level));
   TTree* Tlimit = (TTree*) output->Get("limit");
   Double_t limit = 0;
   Float_t quantileExpected = 0;

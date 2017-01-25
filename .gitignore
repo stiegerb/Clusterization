@@ -10,3 +10,9 @@
 datacard*.txt
 datacard*.root
 higgsCombine*root
+binning*root
+# PSB logs
+*.sh.o*
+*.sh.e*
+# Roostats
+roostats-*

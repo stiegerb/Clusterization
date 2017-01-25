@@ -604,7 +604,7 @@ Double_t TargettedClustering::SignificanceAtLevel(Int_t level)
   bkgs.push_back(hTTW  );  
   MakeSimpleCard card(hTTH, bkgs, Form("datacard%d_Level_%d",seed_,level), 37000., false);
   card.doCard();
-  gSystem->Exec(Form("combine -M Asymptotic -n Trial%d -m %d datacard_Level_%d.txt",seed_,level,level));
+  gSystem->Exec(Form("combine -M Asymptotic -n Trial%d -m %d datacard%d_Level_%d.txt",seed_,level,seed_,level));
   TFile* output = TFile::Open(Form("higgsCombineTrial%d.Asymptotic.mH%d.root",seed_,level));
   TTree* Tlimit = (TTree*) output->Get("limit");
   Double_t limit = 0;

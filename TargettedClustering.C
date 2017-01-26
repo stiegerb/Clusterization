@@ -205,22 +205,25 @@ void Cluster::recluster(UInt_t seed)
   ROOT::Math::Functor functor(this, &Cluster::FOMforClusterCut, 2);
   min->SetFunction(functor);
 
+  double stepFirstEra(0.1);
+  double stepSecondEra(0.01);
+    
   // First training era
-  min->SetVariable(0,"a",r->Uniform(-1.,1.),0.1);
-  min->SetVariable(1,"b",r->Uniform(-5, 5),0.1);
+  min->SetVariable(0,"a",r->Uniform(-1.,1.),stepFirstEra);
+  min->SetVariable(1,"b",r->Uniform(-5, 5),stepFirstEra);
   min->Minimize();
   const double *xs = min->X();
   
   while ( FOMforClusterCut(xs) > 2.){
-    min->SetVariable(0,"a",r->Uniform(-1.,1.),0.1);
-    min->SetVariable(1,"b",r->Uniform(-20.,20.),0.1);
+    min->SetVariable(0,"a",r->Uniform(-1.,1.),stepFirstEra);
+    min->SetVariable(1,"b",r->Uniform(-20.,20.),stepFirstEra);
     min->Minimize();
     xs = min->X();
   }
 
   // Second training era
-  min->SetVariable(0, "a", xs[0],0.01);
-  min->SetVariable(1, "b", xs[1],0.01);
+  min->SetVariable(0, "a", xs[0],stepSecondEra);
+  min->SetVariable(1, "b", xs[1],stepSecondEra);
   min->Minimize();
   xs = min->X();
   

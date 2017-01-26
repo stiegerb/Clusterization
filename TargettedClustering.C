@@ -87,7 +87,6 @@ Int_t Cluster::FindUnclusterizableCluster( Point point )
 
 
   if (fIsClusterizable){
-    //    cout << "Checking point in subclusters..." << endl;
     return SubClusters[FindSubCluster(point,false)].FindUnclusterizableCluster(point);
   }
   else{
@@ -206,17 +205,24 @@ void Cluster::recluster(UInt_t seed)
   ROOT::Math::Functor functor(this, &Cluster::FOMforClusterCut, 2);
   min->SetFunction(functor);
 
-  min->SetVariable(0,"a",r->Uniform(-1.,1.),0.01);
-  min->SetVariable(1,"b",r->Uniform(-5, 5),0.01);
+  // First training era
+  min->SetVariable(0,"a",r->Uniform(-1.,1.),0.1);
+  min->SetVariable(1,"b",r->Uniform(-5, 5),0.1);
   min->Minimize();
   const double *xs = min->X();
   
   while ( FOMforClusterCut(xs) > 2.){
-    min->SetVariable(0,"a",r->Uniform(-1.,1.),0.01);
-    min->SetVariable(1,"b",r->Uniform(-20.,20.),0.01);
+    min->SetVariable(0,"a",r->Uniform(-1.,1.),0.1);
+    min->SetVariable(1,"b",r->Uniform(-20.,20.),0.1);
     min->Minimize();
-    const double *xs = min->X();
+    xs = min->X();
   }
+
+  // Second training era
+  min->SetVariable(0, "a", xs[0],0.01);
+  min->SetVariable(1, "b", xs[1],0.01);
+  min->Minimize();
+  xs = min->X();
   
   cout << "8==================D" << endl;
   cout << "Optimal cuts are..." << endl;
@@ -245,20 +251,29 @@ void Cluster::recluster(UInt_t seed)
     else{
       if (37000*TTH.size()*TTH[0].fW < 5.)
 	fIsClusterizable = false;
+      if (37000*TTbar.size()*TTbar[0].fW < 3.)
+	fIsClusterizable = false;
+      if (37000*TTW.size()*TTW[0].fW < 3.)
+	fIsClusterizable = false;
     }
     Double_t tth = 0;
     Double_t ttw = 0;
     Double_t ttbar = 0;
-    if (TTH.size() > 0)   tth   = 36400 * TTH.size()  * TTH[0]  .fW;
-    if (TTW.size() > 0)   ttw   = 36400 * TTW.size()  * TTW[0]  .fW;
-    if (TTbar.size() > 0) ttbar = 36400 * TTbar.size()  * TTbar[0]  .fW;
+    if (TTH.size() > 0)
+      tth   = 36400 * TTH.size()  * TTH[0]  .fW;
+    
+    if (TTW.size() > 0)
+      ttw   = 36400 * TTW.size()  * TTW[0]  .fW;
+
+    if (TTbar.size() > 0)
+      ttbar = 36400 * TTbar.size()  * TTbar[0]  .fW;
 
     cout << "Expected events in the subcluster " << tth
-	 << " " << ttw << " " << ttbar << endl;
+	 << " " << ttw << " " << ttbar << " " << fIsClusterizable << endl;
 
     vector<double> yields;
-    yields.push_back(36400*TTH.size()*TTH[0].fW);
-    yields.push_back(36400*(TTW.size()*TTW[0].fW + TTbar.size()*TTbar[0].fW));
+    yields.push_back(tth);
+    yields.push_back(ttw + ttbar);
     Significance c(yields);
     cout << "The significance is " << c.getSignificance("pvalue") << endl;
     if (!fIsClusterizable){
@@ -301,8 +316,7 @@ TargettedClustering::TargettedClustering(Int_t k, Int_t nLep, UInt_t seed):
   StartTheThing();
   
   cout << "Produced " << gIndex << " clusters" << endl;
-  Point point(0.353811, 0.456623,-1.); // ? Is this needed/desirable?
-  cout << "Point is " << mainCluster.FindUnclusterizableCluster(point) <<endl;
+
 }
 
 void TargettedClustering::StartTheThing()

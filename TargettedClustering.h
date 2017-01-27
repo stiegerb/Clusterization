@@ -2,9 +2,9 @@
 #define RECURSIVECLUSTERING_H
 #include <utility>
 
-#include"TString.h"
-#include"TFormula.h"
-
+#include<TString.h>
+#include<TFormula.h>
+#include<TRandom3.h>
 class Point
 {
  public:
@@ -21,7 +21,7 @@ class Cluster
 {
  public:
   Cluster(){}
-  Cluster( vector<Point> , vector<Point>, vector<Point>, Int_t, TString );
+  Cluster( vector<Point> , vector<Point>, vector<Point>, Int_t, TString, TRandom3* r);
   ~Cluster() { } 
   void recluster();
   Int_t    FindUnclusterizableCluster( Point );

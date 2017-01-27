@@ -7,23 +7,22 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include "TRandom3.h"
-#include "TMath.h"
-#include "TGraph.h"
-#include "TH1.h"
-#include "TH2.h"
-#include "THStack.h"
-#include "TCanvas.h"
+#include <TMath.h>
+#include <TGraph.h>
+#include <TH1.h>
+#include <TH2.h>
+#include <THStack.h>
+#include <TCanvas.h>
 #include <sstream>
 #include <TString.h> 
-#include "TStyle.h"
-#include "TSystem.h"
-#include "TTree.h"
-#include "TFormula.h"
-#include "Math/Minimizer.h"
-#include "Math/Factory.h"
-#include "Math/Functor.h"
-#include "TROOT.h"
+#include <TStyle.h>
+#include <TSystem.h>
+#include <TTree.h>
+#include <TFormula.h>
+#include <Math/Minimizer.h>
+#include <Math/Factory.h>
+#include <Math/Functor.h>
+#include <TROOT.h>
 
 using namespace std;
 
@@ -189,7 +188,7 @@ double Cluster::FOMforClusterCut( const double *par)
   return result;
 }
 
-void Cluster::recluster(UInt_t seed)
+void Cluster::recluster()
 {
   cout << "Reclustering " << endl;
 
@@ -293,7 +292,7 @@ void Cluster::recluster(UInt_t seed)
     else{
       cout << "Apparently subcluster " << k << " from " << fName 
 	   << " is huge!!! (thats what she said), so theres not showstopper not to keep clustering" << endl;
-      Cluster subCluster = Cluster( TTbar,  TTH  ,  TTW, fK, fName + Form("%u",k));
+      Cluster subCluster = Cluster( TTbar,  TTH  ,  TTW, fK, fName + Form("%u",k), r_);
       cout << "Subcluster is produced " << endl;
       SubClusters.push_back(subCluster);
     }
@@ -301,12 +300,9 @@ void Cluster::recluster(UInt_t seed)
 
   for (size_t k = 0; k < SubClusters.size(); ++k){
       cout << "Cluster " << fName << " is huge!!! (thats what she said)" << endl;
-      SubClusters[k].recluster(seed+10000); // Maintain unicity up to 9999 bootstrap replicas
+      //SubClusters[k].recluster(seed+10000); // Maintain unicity up to 9999 bootstrap replicas
+      SubClusters[k].recluster();
   }
-
-
-  delete r;
-  return;
 
 }
 
@@ -330,7 +326,7 @@ void TargettedClustering::StartTheThing()
   gROOT->LoadMacro("Significance.C+");
   gROOT->LoadMacro("MakeSimpleCard.C+");
 
-  mainCluster = Cluster(fTTbar, fTTH, fTTW, fK, "A", seed_);
+  mainCluster = Cluster(fTTbar, fTTH, fTTW, fK, "A", r_);
   mainCluster.recluster();
   cout << "Final list of significances: " << endl;
   double combinedSignificance(1.);

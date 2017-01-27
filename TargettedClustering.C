@@ -41,8 +41,10 @@ std::ostream &operator<<(std::ostream &os, Point const &point) {
 }
 Int_t gIndex = 0;
 
-Cluster::Cluster( vector<Point> TTbar, vector<Point> TTH  , vector<Point> TTW, Int_t k , TString name)
+Cluster::Cluster( vector<Point> TTbar, vector<Point> TTH  , vector<Point> TTW, Int_t k , TString name, TRandom3* r):
+  r_(r)
 {
+  
   fName = name;
   cout << "Initialising cluster with name " << name << endl;
   fTTbar  = TTbar;
@@ -190,7 +192,6 @@ double Cluster::FOMforClusterCut( const double *par)
 void Cluster::recluster(UInt_t seed)
 {
   cout << "Reclustering " << endl;
-  TRandom3* r = new TRandom3(seed); // Default is surprisingly not zero, it is 4357. If you want unique seed, feed seed=0. Otherwise, manually
 
 
   fFormula = TFormula(fName+"formula", "[0] + [1]*x < y");
@@ -209,14 +210,14 @@ void Cluster::recluster(UInt_t seed)
   double stepSecondEra(0.01);
     
   // First training era
-  min->SetVariable(0,"a",r->Uniform(-1.,1.),stepFirstEra);
-  min->SetVariable(1,"b",r->Uniform(-5, 5),stepFirstEra);
+  min->SetVariable(0,"a",r_->Uniform(-1.,1.),stepFirstEra);
+  min->SetVariable(1,"b",r_->Uniform(-5, 5),stepFirstEra);
   min->Minimize();
   const double *xs = min->X();
   
   while ( FOMforClusterCut(xs) > 2.){
-    min->SetVariable(0,"a",r->Uniform(-1.,1.),stepFirstEra);
-    min->SetVariable(1,"b",r->Uniform(-20.,20.),stepFirstEra);
+    min->SetVariable(0,"a",r_->Uniform(-1.,1.),stepFirstEra);
+    min->SetVariable(1,"b",r_->Uniform(-20.,20.),stepFirstEra);
     min->Minimize();
     xs = min->X();
   }
@@ -315,6 +316,8 @@ TargettedClustering::TargettedClustering(Int_t k, Int_t nLep, UInt_t seed):
   nLep_(nLep),
   seed_(seed)
 {
+  r_ = new TRandom3(seed); // Default is surprisingly not zero, it is 4357. If you want unique seed, feed seed=0. Otherwise, manually
+  
   readFromFiles();
   StartTheThing();
   
@@ -327,8 +330,8 @@ void TargettedClustering::StartTheThing()
   gROOT->LoadMacro("Significance.C+");
   gROOT->LoadMacro("MakeSimpleCard.C+");
 
-  mainCluster = Cluster(fTTbar, fTTH, fTTW, fK, "A");
-  mainCluster.recluster(seed_);
+  mainCluster = Cluster(fTTbar, fTTH, fTTW, fK, "A", seed_);
+  mainCluster.recluster();
   cout << "Final list of significances: " << endl;
   double combinedSignificance(1.);
   for(auto& significance : fSignificances)
@@ -416,6 +419,12 @@ Double_t Cluster::d(Double_t x, Double_t y, Double_t m_x, Double_t m_y)
 
 void TargettedClustering::Test()
 {
+
+  TCanvas* c = new TCanvas();
+  c->cd();
+  gStyle->SetOptStat(0);
+  
+  
   TH1F* hTTbar = new TH1F("hTTbar","",gIndex, -0.5, gIndex-0.5);
   TH1F* hTTW   = new TH1F("hTTW"  ,"",gIndex, -0.5, gIndex-0.5);
   TH1F* hTTH   = new TH1F("hTTH"  ,"",gIndex, -0.5, gIndex-0.5);
@@ -441,31 +450,32 @@ void TargettedClustering::Test()
 	 << hTTW  ->GetBinContent(k+1) << "  " 
 	 << hTTH  ->GetBinContent(k+1) << endl;
   }
+  
+  c->Modified();
+  c->Update();
+  c->Print(Form("histPlot_%d.png",seed_));
+  c->Print(Form("histPlot_%d.pdf",seed_));
 
-//#ifdef SIGNIFICANCE_H
-//  cout << "Now significance test" << endl;
-//  Significance c;
-//  c.Test();
-//#endif 
-//
-//#ifdef MAKESIMPLECARD_H  
-//  cout << "Now simple card test " << endl;
-//  vector<TH1*> bkgs;
-//  bkgs.push_back(hTTbar);
-//  bkgs.push_back(hTTW  );
-//
-//  MakeSimpleCard card(hTTH, bkgs, "datacard_recursiveclustering", 1., false);
-//  card.doCard();
-//#endif
-
+  //#ifdef SIGNIFICANCE_H
+  //  cout << "Now significance test" << endl;
+  //  Significance c;
+  //  c.Test();
+  //#endif 
+  //
+  //#ifdef MAKESIMPLECARD_H  
+  //  cout << "Now simple card test " << endl;
+  //  vector<TH1*> bkgs;
+  //  bkgs.push_back(hTTbar);
+  //  bkgs.push_back(hTTW  );
+  //
+  //  MakeSimpleCard card(hTTH, bkgs, "datacard_recursiveclustering", 1., false);
+  //  card.doCard();
+  //#endif
 }
 
 void TargettedClustering::StoreToFile()
 {
-  ostringstream convert;
-  convert << seed_;
-  TString seedName(convert.str());                                                                                                                         
-  TFile* binning = TFile::Open("binning"+seedName+".root","recreate");
+  TFile* binning = TFile::Open(Form("binning%d.root",seed_),"recreate");
   TH2F*  hBinning = new TH2F("hBinning","",1000,-1.,1.,1000,-1.,1.);
   for (Int_t binx = 0; binx < hBinning->GetXaxis()->GetNbins(); ++binx){
       for (Int_t biny = 0; biny < hBinning->GetYaxis()->GetNbins(); ++biny){
@@ -530,7 +540,11 @@ void TargettedClustering::VoronoiPlot()
     graphs[k]->SetMarkerStyle(6);
     graphs[k]->Draw("PSAME");
   }  
-
+  c->Modified();
+  c->Update();
+  c->Print(Form("voronoi_%d.png",seed_));
+  c->Print(Form("voronoi_%d.pdf",seed_));
+  
 }
 
 

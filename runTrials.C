@@ -17,6 +17,7 @@ void runTrials(int trial){
       gROOT->ProcessLine(Form("g = new TargettedClustering(2,3,%d)", trial));
       gROOT->ProcessLine("g->Test()");
       gROOT->ProcessLine("g->SignificancesEachLevel()");
+      gROOT->ProcessLine("g->VoronoiPlot()");
       gROOT->ProcessLine("delete g");
       //  }
       gApplication->Terminate(0);

@@ -4,6 +4,7 @@
 
 #include"TString.h"
 #include"TFormula.h"
+
 class Point
 {
  public:
@@ -22,7 +23,7 @@ class Cluster
   Cluster(){}
   Cluster( vector<Point> , vector<Point>, vector<Point>, Int_t, TString );
   ~Cluster() { } 
-  void recluster(UInt_t seed);
+  void recluster();
   Int_t    FindUnclusterizableCluster( Point );
   TString  FindSubClusterName(Point, Int_t);
   TString  GetName(){ return fName; }
@@ -38,6 +39,7 @@ class Cluster
   vector<Int_t> fTgt;
   vector<Cluster> SubClusters;
   TString fName; 
+  TRandom3* r_;
 
   bool fIsClusterizable;
   Int_t fIndex; // global label for every non clusterizable cluster
@@ -80,6 +82,8 @@ class TargettedClustering
   Int_t fK;
   Int_t nLep_; // Choose between 2lss and 3l input
   UInt_t seed_;
+
+  TRandom3* r_; // Randomizer
 
   Cluster mainCluster;
   Double_t d(Double_t, Double_t, Double_t, Double_t);

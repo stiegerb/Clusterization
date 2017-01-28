@@ -30,6 +30,11 @@ bool SortY( Point i, Point j)
 {
   return ( i.fY < j.fY );
 }
+bool SortStoB( pair<Double_t,Int_t> i, pair<Double_t,Int_t> j)
+{
+  return (i.first < j.first);
+}
+
 
 std::ostream &operator<<(std::ostream &os, Point const &point) { 
   return os << "(" << point.fX << ", " << point.fY << ")";
@@ -316,6 +321,7 @@ void RecursiveClustering::StartTheThing()
       cout << significance << endl;
     }
   cout << "Final combined significance: " << combinedSignificance << endl;
+  Test();
   StoreToFile();
 }
 
@@ -421,6 +427,15 @@ void RecursiveClustering::Test()
 	 << hTTH  ->GetBinContent(k+1) << endl;
   }
 
+
+
+
+
+  for (int k = 0; k < gIndex; ++k){
+    SoverB.push_back(std::make_pair( hTTH  ->GetBinContent(k+1) / ( hTTbar->GetBinContent(k+1) + hTTW  ->GetBinContent(k+1)), k));
+  }
+  std::sort(SoverB.begin(),SoverB.end(),SortStoB);
+
 //#ifdef SIGNIFICANCE_H
 //  cout << "Now significance test" << endl;
 //  Significance c;
@@ -439,6 +454,15 @@ void RecursiveClustering::Test()
 
 }
 
+Int_t RecursiveClustering::SortedThing(Int_t bin)
+{
+  for (unsigned int k = 0; k < SoverB.size(); ++k){
+    if ( SoverB[k].second == bin ) return k;
+  }
+  cout << "[SortedThing::WTF]" << endl;
+  return -1;
+}
+
 void RecursiveClustering::StoreToFile()
 {
   TFile* binning = TFile::Open("binning.root","recreate");
@@ -448,7 +472,7 @@ void RecursiveClustering::StoreToFile()
 	Double_t x  = hBinning->GetXaxis()->GetBinCenter(binx);
 	Double_t y  = hBinning->GetYaxis()->GetBinCenter(biny);
 	Int_t bin = hBinning->GetBin(binx,biny);
-	hBinning->SetBinContent(bin, mainCluster.FindUnclusterizableCluster(Point(x,y,-1)));
+	hBinning->SetBinContent(bin, SortedThing(mainCluster.FindUnclusterizableCluster(Point(x,y,-1))));
       }
   }
   hBinning->Write();
@@ -626,5 +650,44 @@ void RecursiveClustering::SignificancesEachLevel()
   
   h->SetMarkerStyle(kFullCircle);
   h->Draw("P");
+
+}
+
+
+void RecursiveClustering::SortedTest()
+{
+
+  TCanvas* c = new TCanvas();
+  c->cd();
+  gStyle->SetOptStat(0);
+  
+  
+  TH1F* hTTbar = new TH1F("hTTbar","",gIndex, -0.5, gIndex-0.5);
+  TH1F* hTTW   = new TH1F("hTTW"  ,"",gIndex, -0.5, gIndex-0.5);
+  TH1F* hTTH   = new TH1F("hTTH"  ,"",gIndex, -0.5, gIndex-0.5);
+  THStack* mc  = new THStack("mc","mc");
+  vector<Point>::iterator point;
+
+  for (point = fTTbarMC.begin(); point != fTTbarMC.end(); ++point)
+    hTTbar->Fill( SortedThing( mainCluster.FindUnclusterizableCluster( *point)), 37000*point->fW);
+  for (point = fTTWMC.begin(); point != fTTWMC.end(); ++point)
+    hTTW->Fill( SortedThing( mainCluster.FindUnclusterizableCluster( *point)), 37000*point->fW);
+  for (point = fTTHMC.begin(); point != fTTHMC.end(); ++point)
+    hTTH->Fill( SortedThing( mainCluster.FindUnclusterizableCluster( *point)), 37000*point->fW);
+
+  hTTbar->SetFillColor( kRed     );
+  hTTH->SetFillColor( kBlue    );
+  hTTW->SetFillColor( kMagenta );
+
+  mc->Add( hTTbar ); mc->Add(hTTW); mc->Add(hTTH);
+  mc->Draw("HIST");
+
+  c->Modified();
+  c->Update();
+
+
+
+
+
 
 }

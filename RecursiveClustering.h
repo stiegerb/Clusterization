@@ -59,6 +59,8 @@ class RecursiveClustering
   void VoronoiPlot();
   void VoronoiPlot2(Int_t);
   void     Test();
+  void SortedTest();
+
   Double_t SignificanceAtLevel(Int_t);
   void SignificancesEachLevel();
 
@@ -74,6 +76,7 @@ class RecursiveClustering
   vector<double> fSignificances;
   Int_t fK;
   Int_t nLep_; // Choose between 2lss and 3l input
+  vector<pair<Double_t,Int_t>> SoverB;
 
   Cluster mainCluster;
   void     Init();
@@ -81,6 +84,8 @@ class RecursiveClustering
   void     readFromFiles();
   void     StartTheThing();
   void     StoreToFile();
+  Int_t    SortedThing(Int_t);
+
 };
 
 

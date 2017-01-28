@@ -35,6 +35,11 @@ bool SortY( Point i, Point j)
   return ( i.fY < j.fY );
 }
 
+bool SortStoB( pair<Double_t,Int_t> i, pair<Double_t,Int_t> j)
+{
+  return (i.first < j.first);
+}
+
 std::ostream &operator<<(std::ostream &os, Point const &point) { 
   return os << "(" << point.fX << ", " << point.fY << ")";
 }
@@ -191,7 +196,7 @@ double Cluster::FOMforClusterCut( const double *par)
 void Cluster::recluster()
 {
   cout << "Reclustering " << endl;
-
+  TRandom3* r = new TRandom3();
 
   fFormula = TFormula(fName+"formula", "[0] + [1]*x < y");
   fFormula.SetParameter(0,0.);
@@ -378,6 +383,7 @@ void TargettedClustering::StartTheThing()
       cout << significance << endl;
     }
   cout << "Final combined significance: " << combinedSignificance << endl;
+  Test();
   StoreToFile();
 }
 
@@ -457,7 +463,6 @@ Double_t Cluster::d(Double_t x, Double_t y, Double_t m_x, Double_t m_y)
 
 void TargettedClustering::Test()
 {
-
   TCanvas* c = new TCanvas();
   c->cd();
   gStyle->SetOptStat(0);
@@ -494,21 +499,24 @@ void TargettedClustering::Test()
   c->Print(Form("histPlot_%d.png",seed_));
   c->Print(Form("histPlot_%d.pdf",seed_));
 
-  //#ifdef SIGNIFICANCE_H
-  //  cout << "Now significance test" << endl;
-  //  Significance c;
-  //  c.Test();
-  //#endif 
-  //
-  //#ifdef MAKESIMPLECARD_H  
-  //  cout << "Now simple card test " << endl;
-  //  vector<TH1*> bkgs;
-  //  bkgs.push_back(hTTbar);
-  //  bkgs.push_back(hTTW  );
-  //
-  //  MakeSimpleCard card(hTTH, bkgs, "datacard_recursiveclustering", 1., false);
-  //  card.doCard();
-  //#endif
+
+
+
+  for (int k = 0; k < gIndex; ++k){
+    SoverB.push_back(std::make_pair( hTTH  ->GetBinContent(k+1) / ( hTTbar->GetBinContent(k+1) + hTTW  ->GetBinContent(k+1)), k));
+  }
+  std::sort(SoverB.begin(),SoverB.end(),SortStoB);
+
+
+}
+
+Int_t TargettedClustering::SortedThing(Int_t bin)
+{
+  for (unsigned int k = 0; k < SoverB.size(); ++k){
+    if ( SoverB[k].second == bin ) return k;
+  }
+  cout << "[SortedThing::WTF]" << endl;
+  return -1;
 }
 
 void TargettedClustering::StoreToFile()
@@ -520,7 +528,7 @@ void TargettedClustering::StoreToFile()
 	Double_t x  = hBinning->GetXaxis()->GetBinCenter(binx);
 	Double_t y  = hBinning->GetYaxis()->GetBinCenter(biny);
 	Int_t bin = hBinning->GetBin(binx,biny);
-	hBinning->SetBinContent(bin, mainCluster.FindUnclusterizableCluster(Point(x,y,-1)));
+	hBinning->SetBinContent(bin, SortedThing(mainCluster.FindUnclusterizableCluster(Point(x,y,-1))));
       }
   }
   hBinning->Write();
@@ -702,5 +710,46 @@ void TargettedClustering::SignificancesEachLevel()
   
   h->SetMarkerStyle(kFullCircle);
   h->Draw("P");
+
+}
+
+
+
+void TargettedClustering::SortedTest()
+{
+
+  TCanvas* c = new TCanvas();
+  c->cd();
+  gStyle->SetOptStat(0);
+  
+  
+  TH1F* hTTbar = new TH1F("hTTbar","",gIndex, -0.5, gIndex-0.5);
+  TH1F* hTTW   = new TH1F("hTTW"  ,"",gIndex, -0.5, gIndex-0.5);
+  TH1F* hTTH   = new TH1F("hTTH"  ,"",gIndex, -0.5, gIndex-0.5);
+  THStack* mc  = new THStack("mc","mc");
+  vector<Point>::iterator point;
+
+  for (point = fTTbarMC.begin(); point != fTTbarMC.end(); ++point)
+    hTTbar->Fill( SortedThing( mainCluster.FindUnclusterizableCluster( *point)), 37000*point->fW);
+  for (point = fTTWMC.begin(); point != fTTWMC.end(); ++point)
+    hTTW->Fill( SortedThing( mainCluster.FindUnclusterizableCluster( *point)), 37000*point->fW);
+  for (point = fTTHMC.begin(); point != fTTHMC.end(); ++point)
+    hTTH->Fill( SortedThing( mainCluster.FindUnclusterizableCluster( *point)), 37000*point->fW);
+
+  hTTbar->SetFillColor( kRed     );
+  hTTH->SetFillColor( kBlue    );
+  hTTW->SetFillColor( kMagenta );
+
+  mc->Add( hTTbar ); mc->Add(hTTW); mc->Add(hTTH);
+  mc->Draw("HIST");
+
+  c->Modified();
+  c->Update();
+  c->Print(Form("histPlot_%d.png",seed_));
+  c->Print(Form("histPlot_%d.pdf",seed_));
+
+
+
+
 
 }

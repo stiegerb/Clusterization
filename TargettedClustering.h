@@ -66,6 +66,7 @@ class TargettedClustering
   void VoronoiPlot();
   void VoronoiPlot2(Int_t);
   void     Test();
+  void SortedTest();
   Double_t SignificanceAtLevel(Int_t);
   void SignificancesEachLevel();
 
@@ -82,6 +83,7 @@ class TargettedClustering
   Int_t fK;
   Int_t nLep_; // Choose between 2lss and 3l input
   UInt_t seed_;
+  vector<pair<Double_t,Int_t>> SoverB;
 
   TRandom3* r_; // Randomizer
 
@@ -90,6 +92,8 @@ class TargettedClustering
   void     readFromFiles();
   void     StartTheThing();
   void     StoreToFile();
+  Int_t    SortedThing(Int_t);
+
 };
 
 

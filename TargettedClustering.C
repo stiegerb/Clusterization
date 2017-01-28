@@ -200,6 +200,37 @@ void Cluster::recluster(UInt_t seed)
   vector<Point> subCentroidList; subCentroidList.clear();
   vector<double> significancesList; significancesList.clear();
   vector<double> partialSignificancesList; partialSignificancesList.clear();
+
+
+  // /////////////////////////////////////////
+  // ////////////////////////////////////////
+  Double_t aBkg = 0.;
+  Double_t bBkg = 0.;
+  Double_t aSig = 0.;
+  Double_t bSig = 0.;
+  Double_t sumSig = 0.;
+  Double_t sumBkg = 0.;
+
+  for (size_t n = 0; n < fTTH.size(); ++n){
+    aSig += fTTH[n].fX*fTTH[n].fW;
+    bSig += fTTH[n].fY*fTTH[n].fW;    
+    sumSig += fTTH[n].fW;
+  }
+  for (size_t n = 0; n < fTTW.size(); ++n){
+    aBkg += fTTW[n].fX*fTTW[n].fW;
+    bBkg += fTTW[n].fY*fTTW[n].fW;
+    sumBkg += fTTW[n].fW;
+  }
+  for (size_t n = 0; n < fTTbar.size(); ++n){
+    aBkg += fTTbar[n].fX*fTTW[n].fW;
+    bBkg += fTTbar[n].fY*fTTW[n].fW;
+    sumBkg += fTTbar[n].fW;
+  }
+  aSig /= sumSig;
+  bSig /= sumSig;
+  aBkg /= sumBkg;
+  bBkg /= sumBkg;
+  
   
   ROOT::Math::Minimizer* min = ROOT::Math::Factory::CreateMinimizer("Minuit","Combined");
   ROOT::Math::Functor functor(this, &Cluster::FOMforClusterCut, 2);
@@ -207,14 +238,18 @@ void Cluster::recluster(UInt_t seed)
 
   double stepFirstEra(0.1);
   double stepSecondEra(0.01);
-    
-  // First training era
-  min->SetVariable(0,"a",r->Uniform(-1.,1.),stepFirstEra);
-  min->SetVariable(1,"b",r->Uniform(-5, 5),stepFirstEra);
+  min->SetVariable(0, "a", 0.5 * ( bSig + bBkg + (aSig + aBkg)*(bSig-bBkg)/(aSig-aBkg)), stepFirstEra);
+  min->SetVariable(1, "b", (bSig - bBkg) / (aBkg - aSig), stepFirstEra);
+  // // First training era
+  // min->SetVariable(0,"a",r->Uniform(-1.,1.),stepFirstEra);
+  // min->SetVariable(1,"b",r->Uniform(-5, 5),stepFirstEra);
   min->Minimize();
   const double *xs = min->X();
   
+  
+
   while ( FOMforClusterCut(xs) > 2.){
+    cout << "It didnt converge yet" << endl;
     min->SetVariable(0,"a",r->Uniform(-1.,1.),stepFirstEra);
     min->SetVariable(1,"b",r->Uniform(-20.,20.),stepFirstEra);
     min->Minimize();
@@ -252,12 +287,18 @@ void Cluster::recluster(UInt_t seed)
     else if (TTbar.size() == 0) fIsClusterizable = false;
     else if (TTW  .size() == 0) fIsClusterizable = false;
     else{
-      if (37000*TTH.size()*TTH[0].fW < 5.)
+      if (37000*TTH.size()*TTH[0].fW < 5.){
+	cout << "Fails cause not enough tth events" << endl;
 	fIsClusterizable = false;
-      if (37000*TTbar.size()*TTbar[0].fW < 3.)
+      }
+      if (37000*TTbar.size()*TTbar[0].fW < 3.){
 	fIsClusterizable = false;
-      if (37000*TTW.size()*TTW[0].fW < 3.)
+	cout << "Fails cause not enough ttbar events" << endl;
+      }
+      if (37000*TTW.size()*TTW[0].fW < 0.){
 	fIsClusterizable = false;
+	cout << "Fails cause not enough ttw events" << endl;
+      }
     }
     Double_t tth = 0;
     Double_t ttw = 0;

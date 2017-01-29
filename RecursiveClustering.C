@@ -1,5 +1,6 @@
 #include "RecursiveClustering.h"
 #include "MakeSimpleCard.h"
+#include "tdrstyle.C"
 #include <TFile.h>
 //#ifdef SIGNIFICANCE_H
 #include "Significance.h"
@@ -19,6 +20,8 @@
 #include "TStyle.h"
 #include "TSystem.h"
 #include "TTree.h"
+#include <TLegend.h>
+#include <TLatex.h>
 
 using namespace std;
 
@@ -465,7 +468,7 @@ Int_t RecursiveClustering::SortedThing(Int_t bin)
 
 void RecursiveClustering::StoreToFile()
 {
-  TFile* binning = TFile::Open("binning.root","recreate");
+  TFile* binning = TFile::Open(Form("binning_%dl.root",nLep_),"recreate");
   TH2F*  hBinning = new TH2F("hBinning","",1000,-1.,1.,1000,-1.,1.);
   for (Int_t binx = 0; binx < hBinning->GetXaxis()->GetNbins(); ++binx){
       for (Int_t biny = 0; biny < hBinning->GetYaxis()->GetNbins(); ++biny){
@@ -505,6 +508,7 @@ void RecursiveClustering::VoronoiPlot()
     
       for (Double_t y = -1; y < 1.; y = y + 1e-3){
 	Int_t k = mainCluster.FindUnclusterizableCluster(Point(x,y,-1));
+        //Int_t k = SortedThing(mainCluster.FindUnclusterizableCluster(Point(x,y,-1)));
 	X[k].push_back(x);
 	Y[k].push_back(y);	
       }
@@ -514,23 +518,38 @@ void RecursiveClustering::VoronoiPlot()
 
   TCanvas* c = new TCanvas();
   c->cd();
-  gStyle->SetOptStat(0);
+  setTDRStyle();
+  
   TH1F* hDummy = new TH1F("hDummy","",2,-1,1);
   hDummy->SetBinContent(1, 1.);
   hDummy->SetBinContent(2,-1.);
   hDummy->SetLineColor(kWhite);
   hDummy->GetYaxis()->SetRangeUser(-1.,1.);
+  hDummy->GetXaxis()->SetTitle("BDT(ttH,tt)");
+  hDummy->GetYaxis()->SetTitle("BDT(ttH,ttV)");
   hDummy->Draw();
   cout << "Done... now plotting" << endl;
   cout << fCentroids.size() << endl;
-
+  
+  TText t;
+  //t.SetTextAngle(60);
+  t.SetTextSize(0.08);
+  //t.SetTextAlign(33);
   for (Int_t k = 0; k < gIndex; ++k){
     graphs.push_back(new TGraph( X[k].size(), &X[k][0], &Y[k][0] ));
-    graphs[k]->SetMarkerColor(k+1);    
+    graphs[k]->SetMarkerColor(k);    
     graphs[k]->SetMarkerStyle(6);
     graphs[k]->Draw("PSAME");
-  }  
 
+    t.SetTextColor(k+1);
+    t.DrawText(fCentroids[k].fX, fCentroids[k].fY, Form("%d",k));
+      
+  }
+
+
+  c->Print(Form("voronoi_%dl.png",nLep_));
+  c->Print(Form("voronoi_%dl.pdf",nLep_));
+  
 }
 
 
@@ -659,8 +678,7 @@ void RecursiveClustering::SortedTest()
 
   TCanvas* c = new TCanvas();
   c->cd();
-  gStyle->SetOptStat(0);
-  
+  setTDRStyle();
   
   TH1F* hTTbar = new TH1F("hTTbar","",gIndex, -0.5, gIndex-0.5);
   TH1F* hTTW   = new TH1F("hTTW"  ,"",gIndex, -0.5, gIndex-0.5);
@@ -682,11 +700,32 @@ void RecursiveClustering::SortedTest()
   mc->Add( hTTbar ); mc->Add(hTTW); mc->Add(hTTH);
   mc->Draw("HIST");
 
+  mc->GetHistogram()->GetYaxis()->SetTitle("Expected events/bin");
+  mc->GetHistogram()->GetXaxis()->SetTitle("Bin in the bdt1#times bdt2 plane");
+  mc->GetHistogram()->GetXaxis()->SetTitleSize(0.05);
+  mc->GetHistogram()->GetXaxis()->SetTitleOffset(1.1);
+  mc->GetHistogram()->GetYaxis()->SetTitleSize(0.05);
+  mc->GetHistogram()->GetYaxis()->SetTitleOffset(1.1);
+  
+  TLegend* l = new TLegend(0.7,0.8,0.9,0.9);
+  l->AddEntry(hTTH  , "ttH signal", "f");
+  l->AddEntry(hTTW  , "ttV"       , "f");
+  l->AddEntry(hTTbar, "tt"        , "f");
+  l->Draw();
+
+  TLatex latex;
+  latex.SetTextSize(0.05);
+  latex.SetTextAlign(13);  //align at top
+  latex.SetTextFont(62);
+  latex.DrawLatexNDC(.1,.95,"CMS Simulation");
+  latex.DrawLatexNDC(.7,.95,"#it{36 fb^{-1}}");
+
   c->Modified();
   c->Update();
 
 
-
+  c->Print(Form("recursive_%dl.png",nLep_));
+  c->Print(Form("recursive_%dl.pdf",nLep_));
 
 
 

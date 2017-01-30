@@ -208,6 +208,8 @@ std::pair<vector<Point>, vector<double> > Cluster::recluster()
     else{
       if (37000*TTH.size()*TTH[0].fW < 5.)
 	fIsClusterizable = false;
+      if (37000*TTbar.size()*TTbar[0].fW < 3.)
+        fIsClusterizable = false;
 //#ifdef SIGNIFICANCE_H
 //      vector<double> yields;
 //      yields.push_back(36400*TTH.size()*TTH[0].fW);
@@ -338,7 +340,7 @@ void RecursiveClustering::readFromFiles()
   Int_t count = 0;
   while (f){
     Double_t x = 0; Double_t y = 0; Double_t w = 0;
-    f >> x >> y >> w;
+    f >> y >> x >> w;
     if ( TMath::Abs(x) > 2.) continue;
     if ( TMath::Abs(y) > 2.) continue;
     Point point = Point(x,y,2*w);
@@ -369,7 +371,7 @@ void RecursiveClustering::readFromFiles()
   f.close();
   cout << "TTH events " << fTTH.size() << endl;
 
-  nLep_==3 ? f.open("data/ttw3l.txt") : f.open("data/ttw.txt");
+  nLep_==3 ? f.open("data/ttw3l.txt") : f.open("data/ttv.txt");
   while (f){
     Double_t x = 0; Double_t y = 0; Double_t w = 0;
     f >> x >> y >> w;
@@ -551,8 +553,8 @@ void RecursiveClustering::VoronoiPlot()
 
 
   c->Print(Form("voronoi_%dl.png",nLep_));
-  c->Print(Form("voronoi_%dl.pdf",nLep_));
-  
+  //c->Print(Form("voronoi_%dl.pdf",nLep_));
+  cout << "REACTIVATE VORONOI.PDF" << endl;
 }
 
 
@@ -686,19 +688,38 @@ void RecursiveClustering::SortedTest()
   TH1F* hTTbar = new TH1F("hTTbar","",gIndex, -0.5, gIndex-0.5);
   TH1F* hTTW   = new TH1F("hTTW"  ,"",gIndex, -0.5, gIndex-0.5);
   TH1F* hTTH   = new TH1F("hTTH"  ,"",gIndex, -0.5, gIndex-0.5);
-  THStack* mc  = new THStack("mc","mc");
+  
+
+THStack* mc  = new THStack("mc","mc");
   vector<Point>::iterator point;
 
   for (point = fTTbarMC.begin(); point != fTTbarMC.end(); ++point)
-    hTTbar->Fill( SortedThing( mainCluster.FindUnclusterizableCluster( *point)), 37000*point->fW);
+    {
+      hTTbar->Fill( SortedThing( mainCluster.FindUnclusterizableCluster( *point)), 37000*point->fW);
+    }
   for (point = fTTWMC.begin(); point != fTTWMC.end(); ++point)
-    hTTW->Fill( SortedThing( mainCluster.FindUnclusterizableCluster( *point)), 37000*point->fW);
+    {
+      hTTW->Fill( SortedThing( mainCluster.FindUnclusterizableCluster( *point)), 37000*point->fW);
+    } 
   for (point = fTTHMC.begin(); point != fTTHMC.end(); ++point)
-    hTTH->Fill( SortedThing( mainCluster.FindUnclusterizableCluster( *point)), 37000*point->fW);
-
+    {
+      hTTH->Fill( SortedThing( mainCluster.FindUnclusterizableCluster( *point)), 37000*point->fW);
+    }
   hTTbar->SetFillColor( kRed     );
   hTTH->SetFillColor( kBlue    );
   hTTW->SetFillColor( kMagenta );
+
+  
+  cout << "Now simple card test " << endl;
+  vector<TH1*> bkgs;
+  bkgs.push_back(hTTbar);
+  bkgs.push_back(hTTW  );
+  
+  MakeSimpleCard card(hTTH, bkgs, "datacard_recursiveclustering", 1., false);
+  card.doCard();
+
+
+
 
   mc->Add( hTTbar ); mc->Add(hTTW); mc->Add(hTTH);
   mc->Draw("HIST");

@@ -330,10 +330,11 @@ void RecursiveClustering::StartTheThing()
 
 void RecursiveClustering::readFromFiles()
 {
-  
+      
+
   fTTbar.clear(); fTTH.clear(); fTTW.clear();
   ifstream f;
-  nLep_==3 ? f.open("data/ttbar3l.txt") : f.open("data/TTSingleLeptonMarco.txt");
+  nLep_==3 ? f.open("data/ttbar3l.txt") : f.open("data/ttbar.txt");
   Int_t count = 0;
   while (f){
     Double_t x = 0; Double_t y = 0; Double_t w = 0;
@@ -349,7 +350,8 @@ void RecursiveClustering::readFromFiles()
   }
   f.close();
   cout << "TTbar events " << fTTbar.size() << endl;
-  nLep_==3 ? f.open("data/tth3l.txt") : f.open("data/ttH.txt");
+
+  nLep_==3 ? f.open("data/tth3l.txt") : f.open("data/tth.txt");
   while (f){
     Double_t x = 0; Double_t y = 0; Double_t w = 0;
     f >> x >> y >> w;
@@ -366,6 +368,7 @@ void RecursiveClustering::readFromFiles()
   }
   f.close();
   cout << "TTH events " << fTTH.size() << endl;
+
   nLep_==3 ? f.open("data/ttw3l.txt") : f.open("data/ttw.txt");
   while (f){
     Double_t x = 0; Double_t y = 0; Double_t w = 0;
@@ -382,7 +385,7 @@ void RecursiveClustering::readFromFiles()
     count++;
   }
   f.close();
-
+  cout << "TTW events " << fTTW.size() << endl;
 }
 
 // // Double_t RecursiveClustering::getMax( Double_t* data, Double_t coeff)

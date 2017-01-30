@@ -34,7 +34,7 @@ void kMeansWeights::readFromFiles()
 {
   
   fN = 0;
-  ifstream f; f.open("data/TTSingleLeptonMarco.txt");
+  ifstream f; f.open("data/ttbar.txt");
   Int_t count = 0;
   while (f){
     Double_t x = 0; Double_t y = 0; Double_t w = 0;
@@ -55,7 +55,7 @@ void kMeansWeights::readFromFiles()
   }
   f.close();
   
-  f.open("data/ttH.txt");
+  f.open("data/tth.txt");
   while (f){
     Double_t x = 0; Double_t y = 0; Double_t w = 0;
     f >> x >> y >> w;

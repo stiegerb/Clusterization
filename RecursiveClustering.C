@@ -206,10 +206,12 @@ std::pair<vector<Point>, vector<double> > Cluster::recluster()
     else if (TTbar.size() == 0) fIsClusterizable = false;
     else if (TTW  .size() == 0) fIsClusterizable = false;
     else{
-      if (36500*TTH.size()*TTH[0].fW < 5.)
+      if (36500*TTH.size()*TTH[0].fW < 4.)
 	fIsClusterizable = false;
-      if (36500*TTbar.size()*TTbar[0].fW < 3.)
+      if (36500*TTbar.size()*TTbar[0].fW + 36500*TTW.size()*TTW[0].fW < 1.)
         fIsClusterizable = false;
+
+      cout << "========> Signal " << (36500*TTH.size()*TTH[0].fW)<< " ======> Background " << (36500*TTbar.size()*TTbar[0].fW) << endl;
 //#ifdef SIGNIFICANCE_H
 //      vector<double> yields;
 //      yields.push_back(36400*TTH.size()*TTH[0].fW);
@@ -240,16 +242,19 @@ std::pair<vector<Point>, vector<double> > Cluster::recluster()
     Double_t tth = 0;
     Double_t ttw = 0;
     Double_t ttbar = 0;
-    if (TTH.size() > 0)   tth   = 36400 * TTH.size()  * TTH[0]  .fW;
-    if (TTW.size() > 0)   ttw   = 36400 * TTW.size()  * TTW[0]  .fW;
-    if (TTbar.size() > 0) ttbar = 36400 * TTbar.size()  * TTbar[0]  .fW;
+    if (TTH.size() > 0)   tth   = 36500 * TTH.size()  * TTH[0]  .fW;
+    if (TTW.size() > 0)   ttw   = 36500 * TTW.size()  * TTW[0]  .fW;
+    if (TTbar.size() > 0) ttbar = 36500 * TTbar.size()  * TTbar[0]  .fW;
 
     cout << "Expected events in the subcluster " << tth
 	 << " " << ttw << " " << ttbar << endl;
 
     vector<double> yields;
-    yields.push_back(36400*TTH.size()*TTH[0].fW);
-    yields.push_back(36400*(TTW.size()*TTW[0].fW + TTbar.size()*TTbar[0].fW));
+    if(TTH.size()>0) yields.push_back(36500*TTH.size()*TTH[0].fW);
+    double dayield(0);
+    if(TTW.size()>0) dayield+=36500*TTW.size()*TTW[0].fW;
+    if(TTbar.size()>0) dayield+=36500*TTbar.size()*TTbar[0].fW;
+    yields.push_back(dayield);
     Significance c(yields);
     cout << "The significance is " << c.getSignificance("pvalue") << endl;
     if (!fIsClusterizable){

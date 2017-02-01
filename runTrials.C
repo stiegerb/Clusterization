@@ -7,14 +7,14 @@ void runTrials(int trial, TString module){
 
   gROOT->ProcessLine(".L MakeSimpleCard.C+");
   gROOT->ProcessLine(".L Significance.C+");
-  gROOT->ProcessLine(Form(".L %s.C+",module));
+  gROOT->ProcessLine(Form(".L %s.C+",module.Data()));
   
   
-  gROOT->ProcessLine(Form("%s* g",module));
+  gROOT->ProcessLine(Form("%s* g",module.Data()));
   
   //for(int trial=1; trial<1001; ++trial)
   //  {
-  gROOT->ProcessLine(Form("g = new %s(2,3,%d)",module,trial));
+  gROOT->ProcessLine(Form("g = new %s(2,3,%d)",module.Data(),trial));
   gROOT->ProcessLine("g->Test()");
   if(module=="TargettedClustering") gROOT->ProcessLine("g->SignificancesEachLevel()");
   gROOT->ProcessLine("g->VoronoiPlot()");

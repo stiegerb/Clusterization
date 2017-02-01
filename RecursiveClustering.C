@@ -368,9 +368,10 @@ std::pair<vector<Point>, vector<double> > Cluster::recluster()
 }
 
 
-RecursiveClustering::RecursiveClustering(Int_t k, Int_t nLep):
+RecursiveClustering::RecursiveClustering(Int_t k, Int_t nLep, Int_t trial):
   fK(k),
-  nLep_(nLep)
+  nLep_(nLep),
+  trial_(trial)
 {
   readFromFiles();
   StartTheThing();
@@ -528,8 +529,8 @@ void RecursiveClustering::Test()
   c->Update();
 
 
-  c->Print(Form("recursiveNoOrdering_%dl.png",nLep_));
-  c->Print(Form("recursiveNoOrdering_%dl.pdf",nLep_));
+  c->Print(Form("recursiveNoOrdering_%dl_trial%d.png",nLep_,trial_));
+  c->Print(Form("recursiveNoOrdering_%dl_trial%d.pdf",nLep_,trial_));
 
   for (int k = 0; k < gIndex; ++k){
     cout << hTTbar->GetBinContent(k+1) << "  " 
@@ -654,8 +655,9 @@ void RecursiveClustering::VoronoiPlot()
   }
 
 
-  c->Print(Form("voronoi_%dl.png",nLep_));
-  c->Print(Form("voronoi_%dl.pdf",nLep_));
+  c->Print(Form("voronoi_%dl_trial%d.png",nLep_,trial_));
+  if(trial_==0) // Only save PDF when running in single mode. Otherwise, huuuuge clogging of backup server
+    c->Print(Form("voronoi_%dl_trial%d.pdf",nLep_,trial_));
   cout << "REACTIVATE VORONOI.PDF" << endl;
 }
 

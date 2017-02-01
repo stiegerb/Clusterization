@@ -54,7 +54,7 @@ class Cluster
 class RecursiveClustering
 {
  public: 
-  RecursiveClustering(Int_t k, Int_t nLep=2) ;
+  RecursiveClustering(Int_t k, Int_t nLep=2, Int_t trial=0) ;
   ~RecursiveClustering() {}
   void makeHistos();
   void VoronoiPlot();
@@ -77,6 +77,7 @@ class RecursiveClustering
   vector<double> fSignificances;
   Int_t fK;
   Int_t nLep_; // Choose between 2lss and 3l input
+  Int_t trial_;
   vector<pair<Double_t,Int_t>> SoverB;
 
   Cluster mainCluster;

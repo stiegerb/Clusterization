@@ -1,6 +1,7 @@
 #!/bin/bash
 
 TRIAL=$1
+MODULE=$2
 
 export SCRAM_ARCH=slc6_amd64_gcc530
 export VO_CMS_SW_DIR=/cms/cvmfs/cms.cern.ch
@@ -15,4 +16,4 @@ source /cms/cvmfs/cms.cern.ch/crab3/crab.sh
 cmsenv
 
 cd /nfs/fanae/user/vischia/workarea/cmssw/tthMultilepton/Clusterization/
-root -l -b runTrials.C\(${TRIAL}\)
+root -l -b runTrials.C\(${TRIAL}\,\"${MODULE}\"\)

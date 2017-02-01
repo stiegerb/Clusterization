@@ -133,7 +133,7 @@ Int_t Cluster::CalculateCentroids()
     fCentroids[k].fW = -1000000; // weights should never be used for centroids
     fMWght.push_back(0);
   }
-
+  
   for (size_t n = 0; n < fData.size(); ++n){
     fCentroids[fTgt[n]].fX    +=  fData[n].fW * fData[n].fX;
     fCentroids[fTgt[n]].fY    +=  fData[n].fW * fData[n].fY;
@@ -141,7 +141,6 @@ Int_t Cluster::CalculateCentroids()
   }
 
   Double_t di = 0;
-  
   for (size_t k = 0; k < fCentroids.size(); ++k){
     fCentroids[k].fX /= fMWght[k];
     fCentroids[k].fY /= fMWght[k];
@@ -151,9 +150,40 @@ Int_t Cluster::CalculateCentroids()
   // cout << "[I]: New centroids are (" << fMx[0] << "," << fMy[0]
   //      << ") and (" << fMx[1] << "," << fMy[1] << ")" << endl;
 
+  return theyChange;
+}
+
+Int_t Cluster::CalculateCentroidsDynamically()
+{
+  Int_t theyChange = 1;
+  vector<Double_t> fMWght;
+  vector<Point> fOldCentroids = fCentroids;
+
+  for (size_t k = 0; k < fCentroids.size(); ++k){
+    fCentroids[k].fX = 0;
+    fCentroids[k].fY = 0;
+    fCentroids[k].fW = -1000000; // weights should never be used for centroids
+    fMWght.push_back(0);
+  }
+  
+  for (size_t n = 0; n < fTgt.size(); ++n){
+    fCentroids[fTgt[n]].fX    +=  fData[n].fW * fData[n].fX;
+    fCentroids[fTgt[n]].fY    +=  fData[n].fW * fData[n].fY;
+    fMWght[fTgt[n]] +=  fData[n].fW;
+  }
+
+  Double_t di = 0;
+
+  for (size_t k = 0; k < fCentroids.size(); ++k){
+    fCentroids[k].fX /= (fMWght[k] == 0 ? 1.0 : fMWght[k]);
+    fCentroids[k].fY /= (fMWght[k] == 0 ? 1.0 : fMWght[k]);
+    di += d(fCentroids[k].fX,fCentroids[k].fY, fCentroids[k].fW, fOldCentroids[k].fX, fOldCentroids[k].fY, fOldCentroids[k].fW);
+  }
+  if (di < 1.0e-8) theyChange =  -1;
+  // cout << "[I]: New centroids are (" << fMx[0] << "," << fMy[0]
+  //      << ") and (" << fMx[1] << "," << fMy[1] << ")" << endl;
 
   return theyChange;
-
 }
 
 
@@ -172,35 +202,63 @@ std::pair<vector<Point>, vector<double> > Cluster::recluster()
     fCentroids.push_back(centroid);
     cout << centroid << endl;
   }
-  // Cluster assignation
-  Int_t maxIt = 999999;
-  Int_t it = 0;
-
-  while (it < maxIt){
-    it++;
-    MakeAssignment();
-    if (CalculateCentroids() < 0) break;
-  }
-  cout << "Centroids are " << "(" << fCentroids[0].fX << "," << fCentroids[0].fY 
-       << ")" << endl;
-  if ( maxIt == it) cout << "[W]: Maximum number of iterations reached!! ";
   
-  
+  TString orig_("original");
+  if(orig_=="original")
+    {
+      // Cluster assignation
+      Int_t maxIt = 999999;
+      Int_t it = 0;
+      
+      while (it < maxIt){
+        it++;
+        cout << "Iteration: " << it << endl;
+        fTgt.clear();
+        // Assigns each data point to its cluster :)
+        for (size_t n = 0; n < fData.size(); ++n){
+          fTgt.push_back( FindSubCluster( fData[n] ));
+          // For each subsequent assignment, it recalculates the centroids
+          CalculateCentroidsDynamically();
+          //cout << "Added " << n << "th event to some cluster, and centroid recalculated. " << endl;
+        }
+        // Recalculate centroids one last time to check if we reached convergence at this level of iteration
+        if (CalculateCentroidsDynamically() < 0) break;
+      }
+      cout << "Centroids are " << "(" << fCentroids[0].fX << "," << fCentroids[0].fY << ")" << endl;
+      if ( maxIt == it) cout << "[W]: Maximum number of iterations reached!! ";
+    }
+  else
+    {
+      // Cluster assignation
+      Int_t maxIt = 999999;
+      Int_t it = 0;
+      
+      while (it < maxIt){
+        it++;
+        MakeAssignment();
+        if (CalculateCentroids() < 0) break;
+      }
+      cout << "Centroids are " << "(" << fCentroids[0].fX << "," << fCentroids[0].fY 
+           << ")" << endl;
+      if ( maxIt == it) cout << "[W]: Maximum number of iterations reached!! ";
+    }  
   vector<Point> subCentroidList; subCentroidList.clear();
   vector<double> significancesList; significancesList.clear();
   vector<double> partialSignificancesList; partialSignificancesList.clear();
   for (unsigned int k = 0; k < fK; ++k){
+
     vector<Point> TTbar; TTbar.clear();
     vector<Point> TTW;   TTW.clear();
     vector<Point> TTH;   TTH.clear();
     double sumTTH(0);
     for (size_t n = 0; n < fTTH.size(); ++n){
-      if ( FindSubCluster( fTTH[n] ) == k)
-        {
-          TTH.push_back( fTTH[n]);
-          sumTTH += fTTH[n].fW;
-        }
+    if ( FindSubCluster( fTTH[n] ) == k)
+      {
+        TTH.push_back( fTTH[n]);
+        sumTTH += fTTH[n].fW;
+      }
     }
+
     for (size_t n = 0; n < fTTW.size(); ++n){
       if ( FindSubCluster( fTTW[n] ) == k) TTW.push_back( fTTW[n]);
     }

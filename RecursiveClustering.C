@@ -78,7 +78,7 @@ UInt_t Cluster::FindSubCluster( Point point , bool verbose)
   Double_t dist = 10000;
   for (size_t k = 0; k < fCentroids.size(); ++k){
     if (verbose ) cout << "Checking centroid " << fCentroids[k] << endl;
-    Double_t dst = d( point.fX, point.fY, fCentroids[k].fX, fCentroids[k].fY);
+    Double_t dst = d( point.fX, point.fY, point.fW, fCentroids[k].fX, fCentroids[k].fY, fCentroids[k].fW);
     if (dst < dist){
       cluster = k;
       dist = dst;
@@ -145,7 +145,7 @@ Int_t Cluster::CalculateCentroids()
   for (size_t k = 0; k < fCentroids.size(); ++k){
     fCentroids[k].fX /= fMWght[k];
     fCentroids[k].fY /= fMWght[k];
-    di += d(fCentroids[k].fX,fCentroids[k].fY, fOldCentroids[k].fX, fOldCentroids[k].fY);
+    di += d(fCentroids[k].fX,fCentroids[k].fY, fCentroids[k].fW, fOldCentroids[k].fX, fOldCentroids[k].fY, fOldCentroids[k].fW);
   }
   if (di < 1.0e-8) theyChange =  -1;
   // cout << "[I]: New centroids are (" << fMx[0] << "," << fMy[0]
@@ -193,8 +193,13 @@ std::pair<vector<Point>, vector<double> > Cluster::recluster()
     vector<Point> TTbar; TTbar.clear();
     vector<Point> TTW;   TTW.clear();
     vector<Point> TTH;   TTH.clear();
+    double sumTTH(0);
     for (size_t n = 0; n < fTTH.size(); ++n){
-      if ( FindSubCluster( fTTH[n] ) == k) TTH.push_back( fTTH[n]);
+      if ( FindSubCluster( fTTH[n] ) == k)
+        {
+          TTH.push_back( fTTH[n]);
+          sumTTH += fTTH[n].fW;
+        }
     }
     for (size_t n = 0; n < fTTW.size(); ++n){
       if ( FindSubCluster( fTTW[n] ) == k) TTW.push_back( fTTW[n]);
@@ -206,9 +211,10 @@ std::pair<vector<Point>, vector<double> > Cluster::recluster()
     else if (TTbar.size() == 0) fIsClusterizable = false;
     else if (TTW  .size() == 0) fIsClusterizable = false;
     else{
-      if (36500*TTH.size()*TTH[0].fW < 4.)
+      //if (36500*TTH.size()*TTH[0].fW < 5.)
+      if (36500*sumTTH < 5.)
 	fIsClusterizable = false;
-      if (36500*TTbar.size()*TTbar[0].fW + 36500*TTW.size()*TTW[0].fW < 1.)
+      if (36500*TTbar.size()*TTbar[0].fW + 36500*TTW.size()*TTW[0].fW < 3.)
         fIsClusterizable = false;
 
       cout << "========> Signal " << (36500*TTH.size()*TTH[0].fW)<< " ======> Background " << (36500*TTbar.size()*TTbar[0].fW) << endl;
@@ -345,7 +351,7 @@ void RecursiveClustering::readFromFiles()
   Int_t count = 0;
   while (f){
     Double_t x = 0; Double_t y = 0; Double_t w = 0;
-    f >> y >> x >> w;
+    f >> y >> x >> w; // 
     if ( TMath::Abs(x) > 2.) continue;
     if ( TMath::Abs(y) > 2.) continue;
     Point point = Point(x,y,2*w);
@@ -360,12 +366,13 @@ void RecursiveClustering::readFromFiles()
 
   nLep_==3 ? f.open("data/tth3l.txt") : f.open("data/tth.txt");
   while (f){
-    Double_t x = 0; Double_t y = 0; Double_t w = 0;
-    f >> x >> y >> w;
+    Double_t x(0), y(0), w(0), z(0);
+    f >> y >> x >> w >> z;
     if (w == 0) continue;
     if ( TMath::Abs(x) > 2.) continue;
     if ( TMath::Abs(y) > 2.) continue;
 
+    w *= z;
     Point point = Point(x,y,2*w);
     if (count%2 == 0)
       fTTH.push_back(point);
@@ -379,7 +386,7 @@ void RecursiveClustering::readFromFiles()
   nLep_==3 ? f.open("data/ttv3l.txt") : f.open("data/ttv.txt");
   while (f){
     Double_t x = 0; Double_t y = 0; Double_t w = 0;
-    f >> x >> y >> w;
+    f >> y >> x >> w;
     if (w == 0) continue;
     if ( TMath::Abs(x) > 2.) continue;
     if ( TMath::Abs(y) > 2.) continue;
@@ -406,9 +413,10 @@ void RecursiveClustering::readFromFiles()
 // //   return max;
 // // }
 
-Double_t Cluster::d(Double_t x, Double_t y, Double_t m_x, Double_t m_y) 
+Double_t Cluster::d(Double_t x, Double_t y, Double_t w, Double_t m_x, Double_t m_y, Double_t m_w) 
 {
-  return TMath::Sqrt( (x-m_x) * (x-m_x) + (y-m_y) * (y-m_y) );
+  //return TMath::Sqrt( (x-m_x)*(x-m_x) + (y-m_y)*(y-m_y) )/(w*m_w);
+  return TMath::Sqrt( (x-m_x)*(x-m_x) + (y-m_y)*(y-m_y) );
   //return TMath::Abs(x-m_x) + TMath::Abs(y-m_y);
 }
 

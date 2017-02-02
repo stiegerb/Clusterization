@@ -14,7 +14,7 @@ void runTrials(int trial, TString module){
   
   //for(int trial=1; trial<1001; ++trial)
   //  {
-  gROOT->ProcessLine(Form("g = new %s(2,3,%d)",module.Data(),trial));
+  gROOT->ProcessLine(Form("g = new %s(2,2,%d)",module.Data(),trial));
   gROOT->ProcessLine("g->Test()");
   if(module=="TargettedClustering") gROOT->ProcessLine("g->SignificancesEachLevel()");
   gROOT->ProcessLine("g->VoronoiPlot()");

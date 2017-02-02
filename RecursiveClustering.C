@@ -16,12 +16,13 @@
 #include "THStack.h"
 #include "TCanvas.h"
 #include <sstream>
-#include <TString.h> 
+#include <TString.h>
 #include "TStyle.h"
 #include "TSystem.h"
 #include "TTree.h"
 #include <TLegend.h>
 #include <TLatex.h>
+#include <stdlib.h>
 
 using namespace std;
 
@@ -39,7 +40,7 @@ bool SortStoB( pair<Double_t,Int_t> i, pair<Double_t,Int_t> j)
 }
 
 
-std::ostream &operator<<(std::ostream &os, Point const &point) { 
+std::ostream &operator<<(std::ostream &os, Point const &point) {
   return os << "(" << point.fX << ", " << point.fY << ")";
 }
 Int_t gIndex = 0;
@@ -49,11 +50,11 @@ Cluster::Cluster( vector<Point> TTbar, vector<Point> TTH  , vector<Point> TTW, I
   fName = name;
   cout << "Initialising cluster with name " << name << endl;
   fTTbar  = TTbar;
-  fTTH    = TTH  ;	
-  fTTW    = TTW  ;	
+  fTTH    = TTH  ;
+  fTTW    = TTW  ;
 
-  fData = fTTbar; 
-  fData.insert( fData.end(), fTTW.begin(),fTTW.end()); 
+  fData = fTTbar;
+  fData.insert( fData.end(), fTTW.begin(),fTTW.end());
   fData.insert( fData.end(), fTTH.begin(),fTTH.end());
 
   fIsClusterizable = true;
@@ -85,7 +86,7 @@ UInt_t Cluster::FindSubCluster( Point point , bool verbose)
     }
   }
   if (cluster < 0){ cout << "[E]: Nearest cluster not found" << endl;}
-  return cluster; 
+  return cluster;
 }
 
 Int_t Cluster::FindUnclusterizableCluster( Point point )
@@ -133,7 +134,7 @@ Int_t Cluster::CalculateCentroids()
     fCentroids[k].fW = -1000000; // weights should never be used for centroids
     fMWght.push_back(0);
   }
-  
+
   for (size_t n = 0; n < fData.size(); ++n){
     fCentroids[fTgt[n]].fX    +=  fData[n].fW * fData[n].fX;
     fCentroids[fTgt[n]].fY    +=  fData[n].fW * fData[n].fY;
@@ -165,7 +166,7 @@ Int_t Cluster::CalculateCentroidsDynamically()
     fCentroids[k].fW = -1000000; // weights should never be used for centroids
     fMWght.push_back(0);
   }
-  
+
   for (size_t n = 0; n < fTgt.size(); ++n){
     fCentroids[fTgt[n]].fX    +=  fData[n].fW * fData[n].fX;
     fCentroids[fTgt[n]].fY    +=  fData[n].fW * fData[n].fY;
@@ -202,14 +203,14 @@ std::pair<vector<Point>, vector<double> > Cluster::recluster()
     fCentroids.push_back(centroid);
     cout << centroid << endl;
   }
-  
+
   TString orig_("original");
   if(orig_=="original")
     {
       // Cluster assignation
       Int_t maxIt = 999999;
       Int_t it = 0;
-      
+
       while (it < maxIt){
         it++;
         cout << "Iteration: " << it << endl;
@@ -232,16 +233,16 @@ std::pair<vector<Point>, vector<double> > Cluster::recluster()
       // Cluster assignation
       Int_t maxIt = 999999;
       Int_t it = 0;
-      
+
       while (it < maxIt){
         it++;
         MakeAssignment();
         if (CalculateCentroids() < 0) break;
       }
-      cout << "Centroids are " << "(" << fCentroids[0].fX << "," << fCentroids[0].fY 
+      cout << "Centroids are " << "(" << fCentroids[0].fX << "," << fCentroids[0].fY
            << ")" << endl;
       if ( maxIt == it) cout << "[W]: Maximum number of iterations reached!! ";
-    }  
+    }
   vector<Point> subCentroidList; subCentroidList.clear();
   vector<double> significancesList; significancesList.clear();
   vector<double> partialSignificancesList; partialSignificancesList.clear();
@@ -289,12 +290,12 @@ std::pair<vector<Point>, vector<double> > Cluster::recluster()
           cout << "First convert cluster list to binning" << endl;
           cout << "Then output binning to histogram" << endl;
           cout << "Write temporary card" << endl;
-          
-// #ifdef MAKESIMPLECARD_H  
+
+// #ifdef MAKESIMPLECARD_H
 //           vector<TH1*> bkgs;
 //           bkgs.push_back(hTTbar);
 //           bkgs.push_back(hTTW  );
-          
+
 //           MakeSimpleCard card(hTTH, bkgs, "datacard_recursiveclustering", 1., false);
 //           card.doCard();
 // #endif
@@ -335,7 +336,7 @@ std::pair<vector<Point>, vector<double> > Cluster::recluster()
       break;
     }
     else{
-      cout << "Apparently subcluster " << k << " from " << fName 
+      cout << "Apparently subcluster " << k << " from " << fName
 	   << " is huge!!! (thats what she said), so theres not showstopper not to keep clustering" << endl;
       Cluster subCluster = Cluster( TTbar,  TTH  ,  TTW, fK, fName + Form("%u",k), fCentroids[k]);
       SubClusters.push_back(subCluster);
@@ -360,25 +361,46 @@ std::pair<vector<Point>, vector<double> > Cluster::recluster()
   double combinedSignificance(1.);
   for(auto& isignif : significancesList)
     combinedSignificance*=isignif;
-  
+
   cout << "Name, size, and combined significance of centroid list " << fName << ", " << subCentroidList.size() << ", " << combinedSignificance << endl;
-  
+
   return std::make_pair(subCentroidList, significancesList);
 
 }
 
 
-RecursiveClustering::RecursiveClustering(Int_t k, Int_t nLep, Int_t trial):
+RecursiveClustering::RecursiveClustering(Int_t k, Int_t nLep, TString fileType, Int_t trial):
   fK(k),
   nLep_(nLep),
-  trial_(trial)
+  trial_(trial),
+  fileType(fileType)
 {
-  readFromFiles();
+  ReadFromFiles();
   StartTheThing();
-  
+
   cout << "Produced " << gIndex << " clusters" << endl;
   Point point(0.353811, 0.456623,-1.);
   cout << "Point is " << mainCluster.FindUnclusterizableCluster(point) <<endl;
+}
+
+void RecursiveClustering::ReadFromFiles()
+{
+  if ( fileType == "txt"){
+    readFromTxTFiles();
+  }
+  else if (fileType == "root"){
+    readFromRootFiles();
+  }
+  else{
+    cout << "Please select a correct file type" << endl;
+    cout << "Script will crash in..." << endl;
+    cout << "...3" << endl;
+    sleep(1);
+    cout << "...2" << endl;
+    sleep(1);
+    cout << "...1" << endl;
+    sleep(1);
+  }
 }
 
 void RecursiveClustering::StartTheThing()
@@ -400,9 +422,78 @@ void RecursiveClustering::StartTheThing()
   StoreToFile();
 }
 
-void RecursiveClustering::readFromFiles()
+void RecursiveClustering::readFromRootFiles()
 {
-      
+  // Todo:
+  // Change file and branch names
+  fTTbar.clear(); fTTH.clear(); fTTW.clear();
+  TFile* f    = 0;
+  TTree* tree = 0;
+  TBranch *bX = 0;
+  TBranch *bY = 0;
+  TBranch *bW = 0;
+
+  Double_t x = 0.;
+  Double_t y = 0.;
+  Double_t w = 0.;
+
+  // Reading ttbar
+  f = TFile::Open( (nLep_ == 3) ? "data/ttbar3l.root" : "data/ttbar.root");
+  tree = (TTree*) f->Get("tree");
+  tree->Branch("bX", &x, "x/F");
+  tree->Branch("bY", &y, "y/F");
+  tree->Branch("bW", &w, "w/F");
+  for (int entr = 0; entr < tree->GetEntries(); entr++){
+    tree->GetEntry(entr);
+    Point point = Point(x,y,2*w);
+    if (entr % 2 == 0)
+      fTTbar.push_back(point);
+    else
+      fTTbarMC.push_back(point);
+  }
+  f->Close();
+  cout << "TTbar events " << fTTbar.size() << endl;
+
+
+  // Reading ttH
+  f = TFile::Open( (nLep_ == 3) ? "data/tth3l.root" : "data/tth.root");
+  tree = (TTree*) f->Get("tree");
+  tree->Branch("bX", &x, "x/F");
+  tree->Branch("bY", &y, "y/F");
+  tree->Branch("bW", &w, "w/F");
+  for (int entr = 0; entr < tree->GetEntries(); entr++){
+    tree->GetEntry(entr);
+    Point point = Point(x,y,2*w);
+    if (entr % 2 == 0)
+      fTTH.push_back(point);
+    else
+      fTTHMC.push_back(point);
+  }
+  f->Close();
+  cout << "TTH events " << fTTH.size() << endl;
+
+  // Reading ttW
+  f = TFile::Open( (nLep_ == 3) ? "data/ttw3l.root" : "data/ttw.root");
+  tree = (TTree*) f->Get("tree");
+  tree->Branch("bX", &x, "x/F");
+  tree->Branch("bY", &y, "y/F");
+  tree->Branch("bW", &w, "w/F");
+  for (int entr = 0; entr < tree->GetEntries(); entr++){
+    tree->GetEntry(entr);
+    Point point = Point(x,y,2*w);
+    if (entr % 2 == 0)
+      fTTW.push_back(point);
+    else
+      fTTWMC.push_back(point);
+  }
+  f->Close();
+  cout << "TTW events " << fTTW.size() << endl;
+
+}
+
+void RecursiveClustering::readFromTxTFiles()
+{
+
 
   fTTbar.clear(); fTTH.clear(); fTTW.clear();
   ifstream f;
@@ -410,7 +501,7 @@ void RecursiveClustering::readFromFiles()
   Int_t count = 0;
   while (f){
     Double_t x = 0; Double_t y = 0; Double_t w = 0;
-    f >> y >> x >> w; // 
+    f >> y >> x >> w; //
     if ( TMath::Abs(x) > 2.) continue;
     if ( TMath::Abs(y) > 2.) continue;
     Point point = Point(x,y,2*w);
@@ -472,7 +563,7 @@ void RecursiveClustering::readFromFiles()
 // //   return max;
 // // }
 
-Double_t Cluster::d(Double_t x, Double_t y, Double_t w, Double_t m_x, Double_t m_y, Double_t m_w) 
+Double_t Cluster::d(Double_t x, Double_t y, Double_t w, Double_t m_x, Double_t m_y, Double_t m_w)
 {
   //return TMath::Sqrt( (x-m_x)*(x-m_x) + (y-m_y)*(y-m_y) )/(w*m_w);
   return TMath::Sqrt( (x-m_x)*(x-m_x) + (y-m_y)*(y-m_y) );
@@ -511,7 +602,7 @@ void RecursiveClustering::Test()
   mc->GetHistogram()->GetXaxis()->SetTitleOffset(1.1);
   mc->GetHistogram()->GetYaxis()->SetTitleSize(0.05);
   mc->GetHistogram()->GetYaxis()->SetTitleOffset(1.1);
-  
+
   TLegend* l = new TLegend(0.7,0.8,0.9,0.9);
   l->AddEntry(hTTH  , "ttH signal", "f");
   l->AddEntry(hTTW  , "ttV"       , "f");
@@ -533,8 +624,8 @@ void RecursiveClustering::Test()
   c->Print(Form("recursiveNoOrdering_%dl_trial%d.pdf",nLep_,trial_));
 
   for (int k = 0; k < gIndex; ++k){
-    cout << hTTbar->GetBinContent(k+1) << "  " 
-	 << hTTW  ->GetBinContent(k+1) << "  " 
+    cout << hTTbar->GetBinContent(k+1) << "  "
+	 << hTTW  ->GetBinContent(k+1) << "  "
 	 << hTTH  ->GetBinContent(k+1) << endl;
   }
 
@@ -551,9 +642,9 @@ void RecursiveClustering::Test()
 //  cout << "Now significance test" << endl;
 //  Significance c;
 //  c.Test();
-//#endif 
+//#endif
 //
-//#ifdef MAKESIMPLECARD_H  
+//#ifdef MAKESIMPLECARD_H
 //  cout << "Now simple card test " << endl;
 //  vector<TH1*> bkgs;
 //  bkgs.push_back(hTTbar);
@@ -609,16 +700,16 @@ void RecursiveClustering::VoronoiPlot()
 {
   vector<TGraph*> graphs; graphs.clear();
   vector<Double_t>* X = new vector<Double_t>[gIndex];
-  vector<Double_t>* Y = new vector<Double_t>[gIndex]; 
+  vector<Double_t>* Y = new vector<Double_t>[gIndex];
 
   cout << "Calculating points" << endl;
   for (Double_t x = -1; x < 1.; x = x + 1e-3){
-    
+
       for (Double_t y = -1; y < 1.; y = y + 1e-3){
 	Int_t k = mainCluster.FindUnclusterizableCluster(Point(x,y,-1));
         //Int_t k = SortedThing(mainCluster.FindUnclusterizableCluster(Point(x,y,-1)));
 	X[k].push_back(x);
-	Y[k].push_back(y);	
+	Y[k].push_back(y);
       }
   }
 
@@ -627,7 +718,7 @@ void RecursiveClustering::VoronoiPlot()
   TCanvas* c = new TCanvas();
   c->cd();
   setTDRStyle();
-  
+
   TH1F* hDummy = new TH1F("hDummy","",2,-1,1);
   hDummy->SetBinContent(1, 1.);
   hDummy->SetBinContent(2,-1.);
@@ -638,20 +729,20 @@ void RecursiveClustering::VoronoiPlot()
   hDummy->Draw();
   cout << "Done... now plotting" << endl;
   cout << fCentroids.size() << endl;
-  
+
   TText t;
   //t.SetTextAngle(60);
   t.SetTextSize(0.08);
   //t.SetTextAlign(33);
   for (Int_t k = 0; k < gIndex; ++k){
     graphs.push_back(new TGraph( X[k].size(), &X[k][0], &Y[k][0] ));
-    graphs[k]->SetMarkerColor(k);    
+    graphs[k]->SetMarkerColor(k);
     graphs[k]->SetMarkerStyle(6);
     graphs[k]->Draw("PSAME");
 
     t.SetTextColor(k+1);
     t.DrawText(fCentroids[k].fX, fCentroids[k].fY, Form("%d",k));
-      
+
   }
 
 
@@ -667,7 +758,7 @@ void RecursiveClustering::VoronoiPlot2(Int_t level)
 {
   vector<TGraph*> graphs; graphs.clear();
   vector<Double_t>* X = new vector<Double_t>[gIndex];
-  vector<Double_t>* Y = new vector<Double_t>[gIndex]; 
+  vector<Double_t>* Y = new vector<Double_t>[gIndex];
 
   vector<TString> stringList; stringList.clear();
   for (Double_t x = -1; x < 1.; x = x + 1e-3){
@@ -679,7 +770,7 @@ void RecursiveClustering::VoronoiPlot2(Int_t level)
 	}
 	itr = std::find( stringList.begin(), stringList.end(), nam);
 	X[itr-stringList.begin()].push_back(x);
-	Y[itr-stringList.begin()].push_back(y);	
+	Y[itr-stringList.begin()].push_back(y);
       }
   }
 
@@ -697,10 +788,10 @@ void RecursiveClustering::VoronoiPlot2(Int_t level)
 
   for (Int_t k = 0; k < gIndex; ++k){
     graphs.push_back(new TGraph( X[k].size(), &X[k][0], &Y[k][0] ));
-    graphs[k]->SetMarkerColor(k+1);    
+    graphs[k]->SetMarkerColor(k+1);
     graphs[k]->SetMarkerStyle(6);
     graphs[k]->Draw("PSAME");
-  }  
+  }
 
 }
 
@@ -710,7 +801,7 @@ Double_t RecursiveClustering::SignificanceAtLevel(Int_t level)
 {
   vector<TGraph*> graphs; graphs.clear();
   vector<TString> stringList; stringList.clear();
-  vector<Point>::iterator point; 
+  vector<Point>::iterator point;
   TH1F* hTTbar = new TH1F(Form("hTTbarLevel%d",level) , "", gIndex, -0.5, gIndex-0.5);
   TH1F* hTTH   = new TH1F(Form("hTTHLevel%d",level)   , "", gIndex, -0.5, gIndex-0.5);
   TH1F* hTTW   = new TH1F(Form("hTTWLevel%d",level)   , "", gIndex, -0.5, gIndex-0.5);
@@ -746,7 +837,7 @@ Double_t RecursiveClustering::SignificanceAtLevel(Int_t level)
   }
   vector<TH1*> bkgs;
   bkgs.push_back(hTTbar);
-  bkgs.push_back(hTTW  );  
+  bkgs.push_back(hTTW  );
   MakeSimpleCard card(hTTH, bkgs, Form("datacard_Level_%d",level), 36500., false);
   card.doCard();
   gSystem->Exec(Form("combine -M Asymptotic -m %d datacard_Level_%d.txt",level,level));
@@ -763,7 +854,7 @@ Double_t RecursiveClustering::SignificanceAtLevel(Int_t level)
       break;
     }
   }
-    
+
   return limit;
 }
 
@@ -775,7 +866,7 @@ void RecursiveClustering::SignificancesEachLevel()
     h->SetBinContent(k, SignificanceAtLevel(k));
     h->SetBinError(k,0.);
   }
-  
+
   h->SetMarkerStyle(kFullCircle);
   h->Draw("P");
 
@@ -788,11 +879,11 @@ void RecursiveClustering::SortedTest()
   TCanvas* c = new TCanvas();
   c->cd();
   setTDRStyle();
-  
+
   TH1F* hTTbar = new TH1F("hTTbar","",gIndex, -0.5, gIndex-0.5);
   TH1F* hTTW   = new TH1F("hTTW"  ,"",gIndex, -0.5, gIndex-0.5);
   TH1F* hTTH   = new TH1F("hTTH"  ,"",gIndex, -0.5, gIndex-0.5);
-  
+
 
 THStack* mc  = new THStack("mc","mc");
   vector<Point>::iterator point;
@@ -804,7 +895,7 @@ THStack* mc  = new THStack("mc","mc");
   for (point = fTTWMC.begin(); point != fTTWMC.end(); ++point)
     {
       hTTW->Fill( SortedThing( mainCluster.FindUnclusterizableCluster( *point)), 36500*point->fW);
-    } 
+    }
   for (point = fTTHMC.begin(); point != fTTHMC.end(); ++point)
     {
       hTTH->Fill( SortedThing( mainCluster.FindUnclusterizableCluster( *point)), 36500*point->fW);
@@ -813,12 +904,12 @@ THStack* mc  = new THStack("mc","mc");
   hTTH->SetFillColor( kBlue    );
   hTTW->SetFillColor( kMagenta );
 
-  
+
   cout << "Now simple card test " << endl;
   vector<TH1*> bkgs;
   bkgs.push_back(hTTbar);
   bkgs.push_back(hTTW  );
-  
+
   MakeSimpleCard card(hTTH, bkgs, "datacard_recursiveclustering", 1., false);
   card.doCard();
 
@@ -834,7 +925,7 @@ THStack* mc  = new THStack("mc","mc");
   mc->GetHistogram()->GetXaxis()->SetTitleOffset(1.1);
   mc->GetHistogram()->GetYaxis()->SetTitleSize(0.05);
   mc->GetHistogram()->GetYaxis()->SetTitleOffset(1.1);
-  
+
   TLegend* l = new TLegend(0.7,0.8,0.9,0.9);
   l->AddEntry(hTTH  , "ttH signal", "f");
   l->AddEntry(hTTW  , "ttV"       , "f");

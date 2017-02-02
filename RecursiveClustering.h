@@ -20,7 +20,7 @@ class Cluster
  public:
   Cluster(){}
   Cluster( vector<Point> , vector<Point>, vector<Point>, Int_t, TString, Point  );
-  ~Cluster() { } 
+  ~Cluster() { }
   std::pair<vector<Point>, vector<double> > recluster();
   Int_t    FindUnclusterizableCluster( Point );
   TString  FindSubClusterName(Point, Int_t);
@@ -37,7 +37,7 @@ class Cluster
   Point fCentroid;
   vector<Int_t> fTgt;
   vector<Cluster> SubClusters;
-  TString fName; 
+  TString fName;
 
   bool fIsClusterizable;
   Int_t fIndex; // global label for every non clusterizable cluster
@@ -53,8 +53,8 @@ class Cluster
 
 class RecursiveClustering
 {
- public: 
-  RecursiveClustering(Int_t k, Int_t nLep=2, Int_t trial=0) ;
+ public:
+  RecursiveClustering(Int_t k, Int_t nLep=2, TString fileType="txt", Int_t trial=0) ;
   ~RecursiveClustering() {}
   void makeHistos();
   void VoronoiPlot();
@@ -67,9 +67,9 @@ class RecursiveClustering
 
  protected:
   // Monte Carlo
-  vector<Point>  fTTbar;  
-  vector<Point>  fTTH;    
-  vector<Point>  fTTW;    
+  vector<Point>  fTTbar;
+  vector<Point>  fTTH;
+  vector<Point>  fTTW;
   vector<Point> fTTbarMC;
   vector<Point> fTTHMC;
   vector<Point> fTTWMC;
@@ -79,11 +79,15 @@ class RecursiveClustering
   Int_t nLep_; // Choose between 2lss and 3l input
   Int_t trial_;
   vector<pair<Double_t,Int_t>> SoverB;
+  void readFromTxTFiles();
+  void readFromRootFiles();
+
+  TString fileType;
 
   Cluster mainCluster;
   void     Init();
   Double_t d(Double_t, Double_t, Double_t, Double_t);
-  void     readFromFiles();
+  void     ReadFromFiles();
   void     StartTheThing();
   void     StoreToFile();
   Int_t    SortedThing(Int_t);

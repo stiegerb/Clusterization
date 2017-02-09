@@ -3,6 +3,7 @@
 #include <utility>
 
 #include"TString.h"
+#include"TGraph.h"
 class Point
 {
  public:
@@ -64,6 +65,7 @@ class RecursiveClustering
 
   Double_t SignificanceAtLevel(Int_t);
   void SignificancesEachLevel();
+  void ReMerge();
 
  protected:
   // Monte Carlo
@@ -75,6 +77,8 @@ class RecursiveClustering
   vector<Point> fTTWMC;
   vector<Point> fCentroids;
   vector<double> fSignificances;
+  vector<TGraph*> contours;
+
   Int_t fK;
   Int_t nLep_; // Choose between 2lss and 3l input
   Int_t trial_;
@@ -91,6 +95,7 @@ class RecursiveClustering
   void     StartTheThing();
   void     StoreToFile();
   Int_t    SortedThing(Int_t);
+  bool AreClustersTogether(int,int);
 
 };
 

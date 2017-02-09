@@ -2,6 +2,7 @@
 #include "MakeSimpleCard.h"
 #include "tdrstyle.C"
 #include <TFile.h>
+#include "TROOT.h"
 //#ifdef SIGNIFICANCE_H
 #include "Significance.h"
 //#endif
@@ -271,9 +272,9 @@ std::pair<vector<Point>, vector<double> > Cluster::recluster()
     else if (TTW  .size() == 0) fIsClusterizable = false;
     else{
       //if (36500*TTH.size()*TTH[0].fW < 5.)
-      if (36500*sumTTH < 5.)
+      if (36500*sumTTH < 1.)
 	fIsClusterizable = false;
-      if (36500*TTbar.size()*TTbar[0].fW + 36500*TTW.size()*TTW[0].fW < 3.)
+      if (36500*TTbar.size()*TTbar[0].fW + 36500*TTW.size()*TTW[0].fW < 1.)
         fIsClusterizable = false;
 
       cout << "========> Signal " << (36500*TTH.size()*TTH[0].fW)<< " ======> Background " << (36500*TTbar.size()*TTbar[0].fW) << endl;
@@ -438,11 +439,11 @@ void RecursiveClustering::readFromRootFiles()
   Double_t w = 0.;
 
   // Reading ttbar
-  f = TFile::Open( (nLep_ == 3) ? "data/ttbar3l.root" : "data/ttbar.root");
+  f = TFile::Open( (nLep_ == 3) ? "data/ttbar3l.root" : "data/ev_2lss_TT.root");
   tree = (TTree*) f->Get("tree");
-  tree->Branch("bX", &x, "x/F");
-  tree->Branch("bY", &y, "y/F");
-  tree->Branch("bW", &w, "w/F");
+  tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &x, "kinMVA_2lss_ttbar_withBDTv8/F");
+  tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &y, "kinMVA_2lss_ttV_withHj/F");
+  tree->Branch("_weight_", &w, "_weight_/F");
   for (int entr = 0; entr < tree->GetEntries(); entr++){
     tree->GetEntry(entr);
     Point point = Point(x,y,2*w);
@@ -456,11 +457,11 @@ void RecursiveClustering::readFromRootFiles()
 
 
   // Reading ttH
-  f = TFile::Open( (nLep_ == 3) ? "data/tth3l.root" : "data/tth.root");
+  f = TFile::Open( (nLep_ == 3) ? "data/tth3l.root" : "data/ev_2lss_TTHnobb_pow.root");
   tree = (TTree*) f->Get("tree");
-  tree->Branch("bX", &x, "x/F");
-  tree->Branch("bY", &y, "y/F");
-  tree->Branch("bW", &w, "w/F");
+  tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &x, "kinMVA_2lss_ttbar_withBDTv8/F");
+  tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &y, "kinMVA_2lss_ttV_withHj/F");
+  tree->Branch("_weight_", &w, "_weight_/F");
   for (int entr = 0; entr < tree->GetEntries(); entr++){
     tree->GetEntry(entr);
     Point point = Point(x,y,2*w);
@@ -473,11 +474,11 @@ void RecursiveClustering::readFromRootFiles()
   cout << "TTH events " << fTTH.size() << endl;
 
   // Reading ttW
-  f = TFile::Open( (nLep_ == 3) ? "data/ttw3l.root" : "data/ttw.root");
+  f = TFile::Open( (nLep_ == 3) ? "data/ttw3l.root" : "data/ev_2lss_TTV.root");
   tree = (TTree*) f->Get("tree");
-  tree->Branch("bX", &x, "x/F");
-  tree->Branch("bY", &y, "y/F");
-  tree->Branch("bW", &w, "w/F");
+  tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &x, "kinMVA_2lss_ttbar_withBDTv8/F");
+  tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &y, "kinMVA_2lss_ttV_withHj/F");
+  tree->Branch("_weight_", &w, "_weight_/F");
   for (int entr = 0; entr < tree->GetEntries(); entr++){
     tree->GetEntry(entr);
     Point point = Point(x,y,2*w);
@@ -630,13 +631,22 @@ void RecursiveClustering::Test()
   }
 
 
-
-
-
   for (int k = 0; k < gIndex; ++k){
     SoverB.push_back(std::make_pair( hTTH  ->GetBinContent(k+1) / ( hTTbar->GetBinContent(k+1) + hTTW  ->GetBinContent(k+1)), k));
   }
   std::sort(SoverB.begin(),SoverB.end(),SortStoB);
+
+  vector<Double_t> ttbarLikeness;
+  vector<Double_t> ttwLikeness;
+  for (int k = 0; k < gIndex; ++k){
+    ttbarLikeness.push_back( hTTbar->GetBinContent(k+1) / (hTTbar->GetBinContent(k+1) + hTTW->GetBinContent(k+1) + hTTH->GetBinContent(k+1)));
+    ttwLikeness.push_back( hTTW->GetBinContent(k+1) / (hTTbar->GetBinContent(k+1) + hTTW->GetBinContent(k+1) + hTTH->GetBinContent(k+1)));
+  }
+  TCanvas* c1 = new TCanvas();
+  TGraph* gr = new TGraph(gIndex, &ttbarLikeness[0], &ttwLikeness[0]);
+  gr->SetMarkerStyle(kFullCircle);
+  gr->Draw("A,P");
+
 
 //#ifdef SIGNIFICANCE_H
 //  cout << "Now significance test" << endl;
@@ -683,7 +693,7 @@ void RecursiveClustering::StoreToFile()
   // Final significance per bin
   double indexes[fSignificances.size()];
   double signifs[fSignificances.size()];
-  for(int idx=0; idx<fSignificances.size(); ++idx)
+  for(unsigned int idx=0; idx<fSignificances.size(); ++idx)
     {
       indexes[idx]=idx;
       signifs[idx]=fSignificances[idx];
@@ -948,4 +958,90 @@ THStack* mc  = new THStack("mc","mc");
 
 
 
+}
+
+
+
+void RecursiveClustering::ReMerge()
+{
+  TFile* binning = TFile::Open(Form("binning_%dl.root",nLep_),"read");
+  TH2F* hBinning = (TH2F*) binning->Get("hBinning");
+  Double_t cnt[gIndex];
+  for (int k = 0; k < gIndex; ++k){
+    cnt[k] = k+0.5;
+  }
+  hBinning->SetContour(gIndex, cnt);
+  TCanvas* c = new TCanvas();
+  hBinning->Draw(" CONT Z LIST");
+  c->Update();
+  TObjArray *conts = (TObjArray*)gROOT->GetListOfSpecials()->FindObject("contours");
+  TList* contLevel = 0;
+
+  if (conts == 0 || conts->GetSize() == 0){
+    printf("*** No Contours Were Extracted!\n");
+    return;
+  }
+  int counter = 0;
+  for(int i = 0; i < conts->GetSize(); i++){
+    contLevel = (TList*)conts->At(i);
+    printf("Contour %d has %d Graphs\n", i, contLevel->GetSize());                                             
+    for (int j = 0, n = contLevel->GetSize(); j < n; ++j) {
+      TGraph *gr2 = (TGraph*) contLevel->At(j);
+      TGraph *gr1 = (TGraph*) gr2->Clone(Form("graph%d",counter));
+      printf("\t Graph %d has %d points\n", j, gr1->GetN());                                                 
+      if (gr1->GetN() > 0) contours.push_back(gr1);
+      Double_t x,y;
+      for (int point = 1; point < gr1->GetN()+1; ++point){
+	gr1->GetPoint(point,x,y);
+	//	cout << x << " " << y <<endl;
+      }
+      counter++;
+      //break;                                                                                                 
+    }
+  }
+  binning->Close();
+  cout << "3,17" << AreClustersTogether(3,17) << endl;
+  cout << "1,2" << AreClustersTogether(1,2) << endl;
+  cout << "1,3" << AreClustersTogether(1,3) << endl;
+  cout << "1,4" << AreClustersTogether(1,4) << endl;
+
+  return;
+
+
+}
+
+
+bool RecursiveClustering::AreClustersTogether(int k1, int k2)
+{
+  Double_t x,y;
+  TFile* binning = TFile::Open(Form("binning_%dl.root",nLep_),"read");
+  TH2F* hBinning = (TH2F*) binning->Get("hBinning");
+  TH2F* hDummy = (TH2F*) hBinning->Clone("hDummy");
+  hDummy->Reset();
+  TCanvas* c  = new TCanvas();
+  hDummy->Draw("colz");
+  for (auto& gr : contours){
+    gr->SetLineColor(kRed);
+    gr->SetLineWidth(2);
+    gr->Draw("LSAME");
+    cout << "Checking new contour" << endl;
+    bool isK1Limit = false;
+    bool isK2Limit = false;
+    for (int point = 1; point < gr->GetN()+1; ++point){
+      gr->GetPoint(point,x,y);
+      //cout << x << " " << y <<  " " << hBinning->GetBinContent(hBinning->FindBin(x,y)) << endl;
+      for (float phi = 0; phi < 2*TMath::Pi(); phi = phi+0.001){
+	Point point(x+0.001*TMath::Cos(phi),y+0.001*TMath::Sin(phi),-1);
+	bool isK1 = (TMath::Abs(hBinning->GetBinContent( hBinning->FindBin(x,y)) - k1) < 0.01);
+	bool isK2 = (TMath::Abs(hBinning->GetBinContent( hBinning->FindBin(x,y)) - k2) < 0.01);
+	if (isK1 && !isK1Limit) cout << "Point " << point << "is in cluster " << k1 << endl;
+	if (isK2 && !isK2Limit) cout << "Point " << point << "is in cluster " << k2 << endl;
+	isK1Limit = isK1Limit || isK1;
+	isK2Limit = isK2Limit || isK2;
+      }
+    }
+    if (isK1Limit && isK2Limit) return true;
+  }
+  binning->Close();
+  return false; 
 }

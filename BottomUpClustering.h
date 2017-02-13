@@ -22,10 +22,17 @@ class BottomUpClustering
  public:
   BottomUpClustering( Int_t nLep=2, TString fileType="txt", Int_t trial=0) ;
   ~BottomUpClustering() {}
-  void VoronoiPlot();
+  // void VoronoiPlot();
   //  void Test();
   void SortedTest();
   void Recluster();
+  void TestBoundaries();
+  bool AreClustersTogether(int,int);
+  void Test();
+  Double_t GetFOM(Int_t, Int_t);
+  void ReCleanClusters();
+  void LoadClusterFromFile();
+  void     StoreToFile();
 
  protected:
   // Monte Carlo
@@ -44,23 +51,24 @@ class BottomUpClustering
   vector<pair<Double_t,Int_t>> SoverB;
   void readFromTxTFiles();
   void readFromRootFiles();
-
+  Double_t GetCluster(Point);
   TString fileType;
-
+  Int_t   NearestClusters(Int_t);
   void     Init();
   void     ReadFromFiles();
   void     StartTheThing();
-  void     StoreToFile();
   Int_t    SortedThing(Int_t);
-  bool     AreClustersTogether(int,int);
   void     MakeFineBinning();
   void     ReMakeTarget();
   void     GetEventsInCluster(Int_t, Double_t&, Double_t&, Double_t&, Double_t&, Double_t&, Double_t&);
-  Double_t GetFOM(Int_t, Int_t);
   void     GetTheContours();
 
   TH2F*    hFineBinning;
   TH2F*    hTargetBinning;
+
+  TH1F*    hFineTTbar;
+  TH1F*    hFineTTW;
+  TH1F*    hFineTTH;
 };
 
 

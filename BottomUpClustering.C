@@ -192,8 +192,26 @@ void BottomUpClustering::readFromTxTFiles()
   cout << "TTW events " << fTTW.size() << endl;
 }
 
+// void BottomUpClustering::MakeFineBinning()
+// {
+//   hFineBinning = new TH2F("hFineBinning","",20,-1.,1.,20,-1.,1.);
+//   int counter = 0;
+//   for (int i = 0; i < hFineBinning->GetXaxis()->GetNbins(); ++i){
+//     for (int j = 0; j < hFineBinning->GetYaxis()->GetNbins(); ++j){
+//       hFineBinning->SetBinContent(hFineBinning->GetBin(i+1,j+1),counter);
+//       vector<Int_t> vct; vct.push_back(hFineBinning->GetBin(i+1,j+1));
+//       clusters.push_back(vct);
+//       counter++;
+//     }
+//   }
+//   // we start from the fine binning
+//   hTargetBinning = (TH2F*) hFineBinning->Clone("hTargetBinning");
+//   return;
+// }
+
 void BottomUpClustering::MakeFineBinning()
 {
+  cout << "Making fine binning " << endl;
   hFineBinning = new TH2F("hFineBinning","",20,-1.,1.,20,-1.,1.);
   int counter = 0;
   for (int i = 0; i < hFineBinning->GetXaxis()->GetNbins(); ++i){
@@ -206,6 +224,25 @@ void BottomUpClustering::MakeFineBinning()
   }
   // we start from the fine binning
   hTargetBinning = (TH2F*) hFineBinning->Clone("hTargetBinning");
+
+  // now getting how the train data is distributed
+  Int_t fineBins = hFineBinning->GetXaxis()->GetNbins()*hFineBinning->GetYaxis()->GetNbins();
+  hFineTTbar = new TH1F("hFineTTbar","",fineBins,-0.5,fineBins-0.5);
+  hFineTTW   = new TH1F("hFineTTW"  ,"",fineBins,-0.5,fineBins-0.5);
+  hFineTTH   = new TH1F("hFineTTH"  ,"",fineBins,-0.5,fineBins-0.5);
+  
+  for (auto& pt : fTTbar){
+    hFineTTbar->Fill(hFineBinning->GetBinContent( hFineBinning->FindBin(pt.fX, pt.fY) ), pt.fW);
+  }
+  for (auto& pt : fTTW){
+    hFineTTW->Fill(hFineBinning->GetBinContent( hFineBinning->FindBin(pt.fX, pt.fY) ), pt.fW);
+  }
+  for (auto& pt : fTTH){
+    hFineTTH->Fill(hFineBinning->GetBinContent( hFineBinning->FindBin(pt.fX, pt.fY) ), pt.fW);
+  }
+
+  //  cout << "histo is " << hFineTTbar << endl;
+
   return;
 }
 
@@ -221,32 +258,63 @@ void BottomUpClustering::ReMakeTarget()
 }
 
 
+// void BottomUpClustering::GetEventsInCluster(Int_t k, Double_t& ttbar, Double_t& ttv, Double_t& tth,Double_t& ttbar_e, Double_t& ttv_e, Double_t& tth_e)
+// {
+//   TH1F* hTTbar = new TH1F("hTTbar","",clusters.size(),-0.5,clusters.size()-0.5);
+//   TH1F* hTTW   = new TH1F("hTTW"  ,"",clusters.size(),-0.5,clusters.size()-0.5);
+//   TH1F* hTTH   = new TH1F("hTTH"  ,"",clusters.size(),-0.5,clusters.size()-0.5);
+  
+//   for (auto& pt : fTTbar){
+//     hTTbar->Fill(hTargetBinning->GetBinContent( hTargetBinning->FindBin(pt.fX, pt.fY) ), pt.fW);
+//   }
+//   for (auto& pt : fTTW){
+//     hTTW->Fill(hTargetBinning->GetBinContent( hTargetBinning->FindBin(pt.fX, pt.fY) ), pt.fW);
+//   }
+//   for (auto& pt : fTTH){
+//     hTTH->Fill(hTargetBinning->GetBinContent( hTargetBinning->FindBin(pt.fX, pt.fY) ), pt.fW);
+//   }
+
+//   ttbar = hTTbar -> GetBinContent( hTTbar -> FindBin(k) );
+//   ttv   = hTTW   -> GetBinContent( hTTW   -> FindBin(k) );
+//   tth   = hTTH   -> GetBinContent( hTTH   -> FindBin(k) );
+//   ttbar_e = hTTbar -> GetBinError( hTTbar -> FindBin(k) );
+//   ttv_e   = hTTW   -> GetBinError( hTTW   -> FindBin(k) );
+//   tth_e   = hTTH   -> GetBinError( hTTH   -> FindBin(k) );
+//   cout << ttbar << endl;
+//   delete hTTbar;
+//   delete hTTW;
+//   delete hTTH;
+// }
+
+
 void BottomUpClustering::GetEventsInCluster(Int_t k, Double_t& ttbar, Double_t& ttv, Double_t& tth,Double_t& ttbar_e, Double_t& ttv_e, Double_t& tth_e)
 {
-  TH1F* hTTbar = new TH1F("hTTbar","",clusters.size(),-0.5,clusters.size()-0.5);
-  TH1F* hTTW   = new TH1F("hTTW"  ,"",clusters.size(),-0.5,clusters.size()-0.5);
-  TH1F* hTTH   = new TH1F("hTTH"  ,"",clusters.size(),-0.5,clusters.size()-0.5);
-  
-  for (auto& pt : fTTbar){
-    hTTbar->Fill(hTargetBinning->GetBinContent( hTargetBinning->FindBin(pt.fX, pt.fY) ), pt.fW);
+  //  cout << "Getting events in cluster" << endl;
+  //  cout << clusters.size() << " " << k << endl;
+  ttbar   = 0.;
+  ttv     = 0.;
+  tth     = 0.;  
+  ttbar_e = 0.;
+  ttv_e   = 0.;
+  tth_e   = 0.;  
+  for (int i = 1; i < hFineBinning->GetXaxis()->GetNbins()+1; ++i){
+    for (int j = 1; j < hFineBinning->GetXaxis()->GetNbins()+1; ++j){
+      Int_t bin = hFineBinning->GetBin(i,j);
+      Double_t binNo = hFineBinning->GetBinContent(bin);
+      if (TMath::Abs(hTargetBinning->GetBinContent(bin) - k) > 0.25) continue;
+      ttbar   += hFineTTbar -> GetBinContent( hFineTTbar -> FindBin(binNo) );
+      ttv     += hFineTTW   -> GetBinContent( hFineTTW   -> FindBin(binNo) );
+      tth     += hFineTTH   -> GetBinContent( hFineTTH   -> FindBin(binNo) );
+      ttbar_e += TMath::Power(hFineTTbar -> GetBinError( hFineTTbar   -> FindBin(binNo) ),2);
+      ttv_e   += TMath::Power(hFineTTW   -> GetBinError( hFineTTW     -> FindBin(binNo) ),2);
+      tth_e   += TMath::Power(hFineTTH   -> GetBinError( hFineTTH     -> FindBin(binNo) ),2);
+    }
   }
-  for (auto& pt : fTTW){
-    hTTW->Fill(hTargetBinning->GetBinContent( hTargetBinning->FindBin(pt.fX, pt.fY) ), pt.fW);
-  }
-  for (auto& pt : fTTH){
-    hTTH->Fill(hTargetBinning->GetBinContent( hTargetBinning->FindBin(pt.fX, pt.fY) ), pt.fW);
-  }
-
-  ttbar = hTTbar -> GetBinContent( hTTbar -> FindBin(k) );
-  ttv   = hTTW   -> GetBinContent( hTTW   -> FindBin(k) );
-  tth   = hTTH   -> GetBinContent( hTTH   -> FindBin(k) );
-  ttbar_e = hTTbar -> GetBinError( hTTbar -> FindBin(k) );
-  ttv_e   = hTTW   -> GetBinError( hTTW   -> FindBin(k) );
-  tth_e   = hTTH   -> GetBinError( hTTH   -> FindBin(k) );
-		     
-  delete hTTbar;
-  delete hTTW;
-  delete hTTH;
+  //cout << ttbar << endl;
+  ttbar_e = TMath::Sqrt(ttbar_e);
+  ttv_e   = TMath::Sqrt(ttv_e  );
+  tth_e   = TMath::Sqrt(tth_e  );
+  return;
 }
 
 Double_t BottomUpClustering::GetFOM(Int_t k1, Int_t k2)
@@ -262,14 +330,22 @@ Double_t BottomUpClustering::GetFOM(Int_t k1, Int_t k2)
   Double_t propTTV1   = ttv1/(ttbar1 + ttv1 + tth1);
   Double_t propTTV2   = ttv2/(ttbar2 + ttv2 + tth2);
 
-  // cout << ttbar1 << " " << ttv1 << " " << tth1 << " " <<  ttbar2 << " " << ttv2 << " " << tth2 <<endl;
+  //cout << ttbar1 << " " << ttv1 << " " << tth1 << " " <<  ttbar2 << " " << ttv2 << " " << tth2 <<endl;
   Double_t propTTbar1_e = ttbar1_e / (ttbar1 + ttv1 + tth1) + ttbar1*(ttv1_e+tth1_e)/((ttbar1 + ttv1 + tth1)*(ttbar1 + ttv1 + tth1));
   Double_t propTTbar2_e = ttbar2_e / (ttbar2 + ttv2 + tth2) + ttbar2*(ttv2_e+tth2_e)/((ttbar2 + ttv2 + tth2)*(ttbar2 + ttv2 + tth2));
   Double_t propTTV1_e   = ttv1_e   / (ttbar1 + ttv1 + tth1) + ttv1*(ttbar1_e+tth1_e)/((ttbar1 + ttv1 + tth1)*(ttbar1 + ttv1 + tth1));
   Double_t propTTV2_e   = ttv2_e   / (ttbar2 + ttv2 + tth2) + ttv2*(ttbar2_e+tth2_e)/((ttbar2 + ttv2 + tth2)*(ttbar2 + ttv2 + tth2));
   // if the fom is close to zero, the clusters are the same
-  if ( (ttbar1*ttv1*tth1*ttbar2*ttv2*tth2) == 0) return 0.;
-  return TMath::Power( (propTTbar1 - propTTbar2) / (propTTbar1_e + propTTbar2_e), 2) + TMath::Power( (propTTV1 - propTTV2) / (propTTV1_e + propTTV2_e), 2) + 37000*2.*(ttbar1+ ttv1+ tth1+ttbar2+ ttv2+ tth2);
+  if ( (ttbar1*ttv1*tth1) == 0){
+    //    cout << "cluster " << k1 << " is empty" << endl;
+    return 0.;
+  }
+  if ( (ttbar2*ttv2*tth2) == 0){
+    //    cout << "cluster " << k2 << " is empty" << endl;
+    return 0.;
+  }
+  //  cout << TMath::Power( (propTTbar1 - propTTbar2) / (propTTbar1_e + propTTbar2_e), 2) + TMath::Power( (propTTV1 - propTTV2) / (propTTV1_e + propTTV2_e), 2) + 37000*2.*(ttbar1+ ttv1+ tth1+ttbar2+ ttv2+ tth2) << endl;
+  return TMath::Power( (propTTbar1 - propTTbar2) / (propTTbar1_e + propTTbar2_e), 2) + TMath::Power( (propTTV1 - propTTV2) / (propTTV1_e + propTTV2_e), 2) + 6/(ttbar1_e / ttbar1 + ttv1_e/ttv1+ tth1_e/tth1+ttbar2_e/ttbar2+ ttv2_e/ttv2+ tth2_e/tth2);
 
 }
 
@@ -654,41 +730,50 @@ void BottomUpClustering::TestBoundaries()
   return;
 }
 
-Int_t BottomUpClustering::NearestClusters(Int_t bin)
-{
-  Int_t x,y,z;
-  hTargetBinning->GetBinXYZ(bin, x,y,z);
-  Double_t x_  = hTargetBinning->GetXaxis()->GetBinCenter(x);
-  Double_t y_  = hTargetBinning->GetYaxis()->GetBinCenter(y);
-  Double_t dist = 999;
-  Int_t theCluster = -1;
-  for (unsigned int cl = 0; cl < clusters.size(); ++cl){
-    for (auto& b: clusters[cl]){
-      hTargetBinning->GetBinXYZ(b, x,y,z);
-      Double_t x2  = hTargetBinning->GetXaxis()->GetBinCenter(x);
-      Double_t y2  = hTargetBinning->GetYaxis()->GetBinCenter(y);
-      Double_t d   = (x_-x2)*(x_-x2)+(y_-y2)*(y_-y2);
-      if (d < dist){
-	dist   = d;
-	theCluster = cl;
-      }
-    }
-  }
-  if (theCluster < 0){
-    cout << "Something wrong is happening in nearestclusters" << endl;
-    cout << "Will return -1 and it will crash" << endl;
-  }
-  return theCluster;
+// Int_t BottomUpClustering::NearestClusters(Int_t bin)
+// {
+//   TRandom3* r = new TRandom3();
+//   Int_t x,y,z;
+//   hTargetBinning->GetBinXYZ(bin, x,y,z);
+//   Double_t x_  = hTargetBinning->GetXaxis()->GetBinCenter(x);
+//   Double_t y_  = hTargetBinning->GetYaxis()->GetBinCenter(y);
+//   Double_t dist = 999;
+//   Int_t theCluster = -1;
+//   cout << "Looking for nearest cluster of " << x_ << " " << y_ << endl;
+//   for (unsigned int cl = 1; cl < clusters.size(); ++cl){
+//     for (auto& b: clusters[cl]){
+//       hTargetBinning->GetBinXYZ(b, x,y,z);
+//       Double_t x2  = hTargetBinning->GetXaxis()->GetBinCenter(x);
+//       Double_t y2  = hTargetBinning->GetYaxis()->GetBinCenter(y);
+//       // sligtly randomized metric. otherwise it always takes the one in the left
+//       Double_t d   = (x_-x2)*(x_-x2)*0.010*r->Uniform(-1,1)+(y_-y2)*(y_-y2)*0.001*r->Uniform(-1.,1.);
+//       if (d < dist){
+// 	dist   = d;
+// 	theCluster = cl;
+// 	cout << "Nearest cluster is " << x2 << " " << y2 << endl;
+//       }
+//     }
+//   }
+//   if (theCluster < 0){
+//     cout << "Something wrong is happening in nearestclusters" << endl;
+//     cout << "Will return -1 and will crash" << endl;
+//   }
+//   cout << "the cluster is " << theCluster << endl;
+//   delete r;
+//   return theCluster;
 
-}
+// }
 
-void BottomUpClustering::ReCleanClusters()
-{
-  for (auto& bin : clusters[0]){
-    clusters[NearestClusters(bin)].push_back(bin);
-  }
-  clusters.erase(clusters.begin());
-  ReMakeTarget();
-  Test();
-
-}
+// void BottomUpClustering::ReCleanClusters()
+// {
+//   cout << clusters[1].size() << endl;
+//   for (auto& bin : clusters[0]){
+//     clusters[NearestClusters(bin)].push_back(bin);
+//   }
+//   cout << clusters[1].size() << endl;
+//   clusters.erase(clusters.begin());
+//   cout << clusters[1].size() << endl;
+//   ReMakeTarget();
+//   Test();
+//   hTargetBinning->Draw("colz text");
+// }

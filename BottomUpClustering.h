@@ -30,7 +30,7 @@ class BottomUpClustering
   bool AreClustersTogether(int,int);
   void Test();
   Double_t GetFOM(Int_t, Int_t);
-  void ReCleanClusters();
+  //  void ReCleanClusters();
   void LoadClusterFromFile();
   void     StoreToFile();
 
@@ -53,7 +53,7 @@ class BottomUpClustering
   void readFromRootFiles();
   Double_t GetCluster(Point);
   TString fileType;
-  Int_t   NearestClusters(Int_t);
+  //  Int_t   NearestClusters(Int_t);
   void     Init();
   void     ReadFromFiles();
   void     StartTheThing();

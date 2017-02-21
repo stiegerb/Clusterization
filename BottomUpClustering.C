@@ -3,6 +3,7 @@
 #include "tdrstyle.C"
 #include <TFile.h>
 #include "TROOT.h"
+#include <algorithm>
 //#ifdef SIGNIFICANCE_H
 #include "Significance.h"
 //#endif
@@ -81,7 +82,7 @@ void BottomUpClustering::readFromRootFiles()
   f = TFile::Open( (nLep_ == 3) ? "data/ttbar3l.root" : "data/ev_2lss_TT.root");
   tree = (TTree*) f->Get("tree");
   tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &x, "kinMVA_2lss_ttbar_withBDTv8/F");
-  tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &y, "kinMVA_2lss_ttV_withHj/F");
+  tree->Branch("kinMVA_2lss_ttV_withHj"     , &y, "kinMVA_2lss_ttV_withHj/F");
   tree->Branch("_weight_", &w, "_weight_/F");
   for (int entr = 0; entr < tree->GetEntries(); entr++){
     tree->GetEntry(entr);
@@ -99,7 +100,7 @@ void BottomUpClustering::readFromRootFiles()
   f = TFile::Open( (nLep_ == 3) ? "data/tth3l.root" : "data/ev_2lss_TTHnobb_pow.root");
   tree = (TTree*) f->Get("tree");
   tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &x, "kinMVA_2lss_ttbar_withBDTv8/F");
-  tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &y, "kinMVA_2lss_ttV_withHj/F");
+  tree->Branch("kinMVA_2lss_ttV_withHj", &y, "kinMVA_2lss_ttV_withHj/F");
   tree->Branch("_weight_", &w, "_weight_/F");
   for (int entr = 0; entr < tree->GetEntries(); entr++){
     tree->GetEntry(entr);
@@ -116,7 +117,7 @@ void BottomUpClustering::readFromRootFiles()
   f = TFile::Open( (nLep_ == 3) ? "data/ttw3l.root" : "data/ev_2lss_TTV.root");
   tree = (TTree*) f->Get("tree");
   tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &x, "kinMVA_2lss_ttbar_withBDTv8/F");
-  tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &y, "kinMVA_2lss_ttV_withHj/F");
+  tree->Branch("kinMVA_2lss_ttV_withHj", &y, "kinMVA_2lss_ttV_withHj/F");
   tree->Branch("_weight_", &w, "_weight_/F");
   for (int entr = 0; entr < tree->GetEntries(); entr++){
     tree->GetEntry(entr);
@@ -335,15 +336,13 @@ Double_t BottomUpClustering::GetFOM(Int_t k1, Int_t k2)
   Double_t propTTbar2_e = ttbar2_e / (ttbar2 + ttv2 + tth2) + ttbar2*(ttv2_e+tth2_e)/((ttbar2 + ttv2 + tth2)*(ttbar2 + ttv2 + tth2));
   Double_t propTTV1_e   = ttv1_e   / (ttbar1 + ttv1 + tth1) + ttv1*(ttbar1_e+tth1_e)/((ttbar1 + ttv1 + tth1)*(ttbar1 + ttv1 + tth1));
   Double_t propTTV2_e   = ttv2_e   / (ttbar2 + ttv2 + tth2) + ttv2*(ttbar2_e+tth2_e)/((ttbar2 + ttv2 + tth2)*(ttbar2 + ttv2 + tth2));
+  
+  //  cout << ttbar1 << " " <<  ttv1 << " " <<  tth1 << endl;
+  
+  if (!(ttbar1 *ttv1*tth1 == 0) != !(ttbar2 *ttv2*tth2 == 0)){
+    return 0.;
+  }
   // if the fom is close to zero, the clusters are the same
-  if ( (ttbar1*ttv1*tth1) == 0){
-    //    cout << "cluster " << k1 << " is empty" << endl;
-    return 0.;
-  }
-  if ( (ttbar2*ttv2*tth2) == 0){
-    //    cout << "cluster " << k2 << " is empty" << endl;
-    return 0.;
-  }
   //  cout << TMath::Power( (propTTbar1 - propTTbar2) / (propTTbar1_e + propTTbar2_e), 2) + TMath::Power( (propTTV1 - propTTV2) / (propTTV1_e + propTTV2_e), 2) + 37000*2.*(ttbar1+ ttv1+ tth1+ttbar2+ ttv2+ tth2) << endl;
   return TMath::Power( (propTTbar1 - propTTbar2) / (propTTbar1_e + propTTbar2_e), 2) + TMath::Power( (propTTV1 - propTTV2) / (propTTV1_e + propTTV2_e), 2) + 6/(ttbar1_e / ttbar1 + ttv1_e/ttv1+ tth1_e/tth1+ttbar2_e/ttbar2+ ttv2_e/ttv2+ tth2_e/tth2);
 
@@ -384,6 +383,7 @@ void BottomUpClustering::Recluster()
       }
     }
     clusters = newClusters;
+    std::random_shuffle(clusters.begin(),clusters.end());
     ReMakeTarget();
   }
   TCanvas* c1 = new TCanvas();
@@ -687,8 +687,28 @@ bool BottomUpClustering::AreClustersTogether(int k1, int k2)
 	return true;
       }
     }
+    // if ( x_+x_d < 1 && y_+y_d < 1){
+    //   if ( hTargetBinning->GetBinContent(hTargetBinning->FindBin(x_+x_d,y_+y_d))==k2){
+    // 	return true;
+    //   }
+    // }
+    // if ( x_+x_d < 1 && y_+y_d > -1){
+    //   if ( hTargetBinning->GetBinContent(hTargetBinning->FindBin(x_+x_d,y_-y_d))==k2){
+    // 	return true;
+    //   }
+    // }
+    // if ( x_-x_d > -1 && y_+y_d < 1){
+    //   if ( hTargetBinning->GetBinContent(hTargetBinning->FindBin(x_-x_d,y_+y_d))==k2){
+    // 	return true;
+    //   }
+    // }
+    // if ( x_-x_d > -1 && y_+y_d > -1){
+    //   if ( hTargetBinning->GetBinContent(hTargetBinning->FindBin(x_-x_d,y_-y_d))==k2){
+    // 	return true;
+    //   }
+    // }
   }
-
+  
   return false;
   // for (auto& gr : contours){
   //   gr->SetLineColor(kRed);

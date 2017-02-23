@@ -197,8 +197,11 @@ void LikeliHOOD::readFromTxTFiles()
 
 void LikeliHOOD::MakeLikeliHood()
 {
-  hSig = new TH2F("hSig","",20,-1.,1.,20,-1.,1.);
-  hBkg = new TH2F("hBkg","",20,-1.,1.,20,-1.,1.);
+
+  Int_t initialSplitting(nLep_==3 ? 10 : 20);
+
+  hSig = new TH2F("hSig","",initialSplitting,-1.,1.,initialSplitting,-1.,1.);
+  hBkg = new TH2F("hBkg","",initialSplitting,-1.,1.,initialSplitting,-1.,1.);
   
   for (auto& pt : fTTbar){
     hBkg->Fill(pt.fX, pt.fY, pt.fW);

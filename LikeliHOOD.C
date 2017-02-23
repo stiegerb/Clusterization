@@ -254,7 +254,7 @@ void LikeliHOOD::GETCUM() // cum for cumulative
   TCanvas* c = new TCanvas();
   h->Scale( 1 / h->Integral());
   h->GetCumulative()->Draw();
-  int nq = 8;
+  int nq(nLep_==3 ? 5 : 8);
   Double_t xq[nq+1]; Double_t yq[nq+1];
   for (Int_t i=0;i<nq;i++) xq[i] = Float_t(i)/nq;
   xq[nq] = 0.99999;

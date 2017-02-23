@@ -248,8 +248,9 @@ void LikeliHOOD::GETCUM() // cum for cumulative
   for (auto& pt : fTTW){
     h->Fill(GetLikeLiHood(pt));
   }
-
-  //  h->GetCumulative()->Draw();
+  TCanvas* c = new TCanvas();
+  h->Scale( 1 / h->Integral());
+  h->GetCumulative()->Draw();
   int nq = 8;
   Double_t xq[nq+1]; Double_t yq[nq+1];
   for (Int_t i=0;i<nq;i++) xq[i] = Float_t(i)/nq;
@@ -270,7 +271,8 @@ Double_t LikeliHOOD::GetCluster(Point pt)
 {
   Int_t bin = hAuxHisto->FindBin(GetLikeLiHood(pt))-1;
   if (bin < 0) return 0;
-  if (bin > hAuxHisto->GetNbinsX()) return hAuxHisto->GetNbinsX();
+  //  if (bin > hAuxHisto->GetNbinsX()) return hAuxHisto->GetNbinsX();
+  if (bin+1 > hAuxHisto->GetNbinsX()) return hAuxHisto->GetNbinsX()-1;
   return bin;
 }
 

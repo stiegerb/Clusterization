@@ -79,8 +79,11 @@ void LikeliHOOD::readFromRootFiles()
   Double_t y = 0.;
   Double_t w = 0.;
 
+
+  TString treesVersion("2017-02-23_22.07");
+
   // Reading ttbar
-  f = TFile::Open( (nLep_ == 3) ? "data/ttbar3l.root" : "data/ev_2lss_TT.root");
+  f = TFile::Open( Form("%s/data/ev_%s_TT_FR_TT.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )) );
   tree = (TTree*) f->Get("tree");
   tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &x, "kinMVA_2lss_ttbar_withBDTv8/F");
   tree->Branch("kinMVA_2lss_ttV_withHj"     , &y, "kinMVA_2lss_ttV_withHj/F");
@@ -98,7 +101,7 @@ void LikeliHOOD::readFromRootFiles()
 
 
   // Reading ttH
-  f = TFile::Open( (nLep_ == 3) ? "data/tth3l.root" : "data/ev_2lss_TTHnobb_pow.root");
+  f = TFile::Open(Form("%s/data/ev_%s_TTHnobb_pow.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )) );
   tree = (TTree*) f->Get("tree");
   tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &x, "kinMVA_2lss_ttbar_withBDTv8/F");
   tree->Branch("kinMVA_2lss_ttV_withHj", &y, "kinMVA_2lss_ttV_withHj/F");
@@ -115,7 +118,7 @@ void LikeliHOOD::readFromRootFiles()
   cout << "TTH events " << fTTH.size() << endl;
 
   // Reading ttW
-  f = TFile::Open( (nLep_ == 3) ? "data/ttw3l.root" : "data/ev_2lss_TTV.root");
+  f = TFile::Open(Form("%s/data/ev_%s_TTV.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )));
   tree = (TTree*) f->Get("tree");
   tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &x, "kinMVA_2lss_ttbar_withBDTv8/F");
   tree->Branch("kinMVA_2lss_ttV_withHj", &y, "kinMVA_2lss_ttV_withHj/F");

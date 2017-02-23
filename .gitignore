@@ -16,3 +16,7 @@ binning*root
 *.sh.e*
 # Roostats
 roostats-*
+# Events
+data/ev_2lss_TT.root
+data/ev_2lss_TTHnobb_pow.root
+data/ev_2lss_TTV.root

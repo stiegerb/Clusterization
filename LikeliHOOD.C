@@ -266,6 +266,10 @@ void LikeliHOOD::GETCUM() // cum for cumulative
   hAuxHisto = new TH1F("hAuxHisto","",nq,yq);
   // hAuxHisto->FillRandom("gaus",100000);
   // hAuxHisto->Draw();
+
+  c->Print(Form("cumulative_%s.pdf", (nLep_==3 ? "3l" : "2lss")));
+  c->Print(Form("cumulative_%s.png", (nLep_==3 ? "3l" : "2lss")));
+  
   return; 
 }
 
@@ -327,6 +331,9 @@ void LikeliHOOD::Test()
 
   c->Modified();
   c->Update();
+
+  c->Print(Form("likelihoodBased_1d_%s.pdf", (nLep_==3 ? "3l" : "2lss")));
+  c->Print(Form("likelihoodBased_1d_%s.png", (nLep_==3 ? "3l" : "2lss")));
 }
 
 Int_t LikeliHOOD::SortedThing(Int_t bin)
@@ -402,5 +409,8 @@ void LikeliHOOD::VoronoiPlot()
     //    t.DrawText(fCentroids[k].fX, fCentroids[k].fY, Form("%d",k));
 
   }
+
+  c->Print(Form("likelihoodBased_2d_%s.pdf", (nLep_==3 ? "3l" : "2lss")));
+  c->Print(Form("likelihoodBased_2d_%s.png", (nLep_==3 ? "3l" : "2lss")));
 
 }

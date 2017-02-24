@@ -273,6 +273,11 @@ void LikeliHOOD::GETCUM() // cum for cumulative
   c->Print(Form("cumulative_%s.pdf", (nLep_==3 ? "3l" : "2lss")));
   c->Print(Form("cumulative_%s.png", (nLep_==3 ? "3l" : "2lss")));
   
+
+  TFile* cumulativeStore = TFile::Open(Form("cumulative_%dl.root",nLep_),"recreate");
+  h->GetCumulative()->Write();
+  cumulativeStore->Close();
+
   return; 
 }
 

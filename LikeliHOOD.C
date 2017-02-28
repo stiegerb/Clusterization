@@ -31,9 +31,10 @@ LikeliHOOD::LikeliHOOD(Int_t nLep, TString fileType, Int_t trial):
   trial_(trial),
   fileType(fileType)
 {
+  gROOT->SetBatch(1);
   ReadFromFiles();
   StartTheThing();
-
+  Test();
 }
 
 void LikeliHOOD::ReadFromFiles()
@@ -66,6 +67,7 @@ void LikeliHOOD::StartTheThing()
 
 void LikeliHOOD::readFromRootFiles()
 {
+  cout << "Reading from root files" << endl;
   // Todo:
   // Change file and branch names
   fTTbar.clear(); fTTH.clear(); fTTW.clear();
@@ -75,19 +77,21 @@ void LikeliHOOD::readFromRootFiles()
   TBranch *bY = 0;
   TBranch *bW = 0;
 
-  Double_t x = 0.;
-  Double_t y = 0.;
-  Double_t w = 0.;
+  Float_t x = 0.;
+  Float_t y = 0.;
+  Float_t w = 0.;
 
 
-  TString treesVersion("2017-02-23_22.07");
+  TString channel = (nLep_==3 ? "3l" : "2lss" );
+  TString branch_tt  = (nLep_==3 ? "thqMVA_tt_3l" : "thqMVA_tt_2lss");
+  TString branch_ttv = (nLep_==3 ? "thqMVA_ttv_3l" : "thqMVA_ttv_2lss");
 
   // Reading ttbar
-  f = TFile::Open( Form("%s/data/ev_%s_TT_FR_TT.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )) );
-  tree = (TTree*) f->Get("tree");
-  tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &x, "kinMVA_2lss_ttbar_withBDTv8/F");
-  tree->Branch("kinMVA_2lss_ttV_withHj"     , &y, "kinMVA_2lss_ttV_withHj/F");
-  tree->Branch("_weight_", &w, "_weight_/F");
+  f = TFile::Open(Form("ntuples_%s_Feb28/ntuple_%s_tt.root", channel.Data(), channel.Data()) );
+  tree = (TTree*) f->Get("t");
+  tree->SetBranchAddress(branch_tt, &x, &bX);
+  tree->SetBranchAddress(branch_ttv, &y, &bY);
+  tree->SetBranchAddress("_weight_", &w, &bW);
   for (int entr = 0; entr < tree->GetEntries(); entr++){
     tree->GetEntry(entr);
     Point point = Point(x,y,2*w);
@@ -101,11 +105,11 @@ void LikeliHOOD::readFromRootFiles()
 
 
   // Reading ttH
-  f = TFile::Open(Form("%s/data/ev_%s_TTHnobb_pow.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )) );
-  tree = (TTree*) f->Get("tree");
-  tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &x, "kinMVA_2lss_ttbar_withBDTv8/F");
-  tree->Branch("kinMVA_2lss_ttV_withHj", &y, "kinMVA_2lss_ttV_withHj/F");
-  tree->Branch("_weight_", &w, "_weight_/F");
+  f = TFile::Open(Form("ntuples_%s_Feb28/ntuple_%s_tH.root", channel.Data(), channel.Data()) );
+  tree = (TTree*) f->Get("t");
+  tree->SetBranchAddress(branch_tt, &x, &bX);
+  tree->SetBranchAddress(branch_ttv, &y, &bY);
+  tree->SetBranchAddress("_weight_", &w, &bW);
   for (int entr = 0; entr < tree->GetEntries(); entr++){
     tree->GetEntry(entr);
     Point point = Point(x,y,2*w);
@@ -115,14 +119,14 @@ void LikeliHOOD::readFromRootFiles()
       fTTHMC.push_back(point);
   }
   f->Close();
-  cout << "TTH events " << fTTH.size() << endl;
+  cout << "THQ events " << fTTH.size() << endl;
 
   // Reading ttW
-  f = TFile::Open(Form("%s/data/ev_%s_TTV.root", treesVersion.Data(), (nLep_==3 ? "3l" : "2lss" )));
-  tree = (TTree*) f->Get("tree");
-  tree->Branch("kinMVA_2lss_ttbar_withBDTv8", &x, "kinMVA_2lss_ttbar_withBDTv8/F");
-  tree->Branch("kinMVA_2lss_ttV_withHj", &y, "kinMVA_2lss_ttV_withHj/F");
-  tree->Branch("_weight_", &w, "_weight_/F");
+  f = TFile::Open(Form("ntuples_%s_Feb28/ntuple_%s_ttV.root", channel.Data(), channel.Data()) );
+  tree = (TTree*) f->Get("t");
+  tree->SetBranchAddress(branch_tt, &x, &bX);
+  tree->SetBranchAddress(branch_ttv, &y, &bY);
+  tree->SetBranchAddress("_weight_", &w, &bW);
   for (int entr = 0; entr < tree->GetEntries(); entr++){
     tree->GetEntry(entr);
     Point point = Point(x,y,2*w);
@@ -132,12 +136,13 @@ void LikeliHOOD::readFromRootFiles()
       fTTWMC.push_back(point);
   }
   f->Close();
-  cout << "TTW events " << fTTW.size() << endl;
+  cout << "TTV events " << fTTW.size() << endl;
 
 }
 
 void LikeliHOOD::readFromTxTFiles()
 {
+  cout << "Reading from text files" << endl;
   fTTbar.clear(); fTTH.clear(); fTTW.clear();
   ifstream f;
   nLep_==3 ? f.open("data/ttbar3l.txt") : f.open("data/ttbar.txt");
@@ -197,8 +202,9 @@ void LikeliHOOD::readFromTxTFiles()
 
 void LikeliHOOD::MakeLikeliHood()
 {
-
-  Int_t initialSplitting(nLep_==3 ? 10 : 20);
+  cout << "MakeLikeliHood" << endl;
+  // Int_t initialSplitting(nLep_==3 ? 10 : 20);
+  Int_t initialSplitting(20);
 
   hSig = new TH2F("hSig","",initialSplitting,-1.,1.,initialSplitting,-1.,1.);
   hBkg = new TH2F("hBkg","",initialSplitting,-1.,1.,initialSplitting,-1.,1.);
@@ -224,29 +230,41 @@ void LikeliHOOD::MakeLikeliHood()
     }
   }
 
+  gStyle->SetOptStat(0);
+
   TCanvas* c1 = new TCanvas();
   hSig->Smooth(1,"k5b");
   hSig->Draw("colz");
+  c1->SaveAs(Form("hSig_%s.pdf", (nLep_==3 ? "3l" : "2lss")));
   TCanvas* c2 = new TCanvas();
   hBkg->Smooth(1,"k5b");
   hBkg->Draw("colz");
+  c2->SaveAs(Form("hBkg_%s.pdf", (nLep_==3 ? "3l" : "2lss")));
 
-  hRtio = (TH2F*) hSig->Clone("hRtio");
+  hRtio = (TH2F*) hSig->Clone("hRtio");  
+  // Calculate S/B ratio
   hRtio->Divide(hBkg);
+
+  // Calculate S/(S+B) ratio
+  // TH2F* hDenom = (TH2F*) hSig->Clone("hDenom");
+  // hDenom->Add(hBkg);
+  // hRtio->Divide(hDenom);
+
   TCanvas* c3 = new TCanvas();
   hRtio->Draw("colz");
-  
+  c3->SaveAs(Form("hRtio_%s.pdf", (nLep_==3 ? "3l" : "2lss")));
 
   return;
 }
 
 Double_t LikeliHOOD::GetLikeLiHood(Point pt){
-  cout << "Getting likelihood " << pt << " " << hRtio->GetBinContent(hRtio->FindBin(pt.fX,pt.fY)) << endl;
+  // cout << "Getting likelihood " << pt << " " << hRtio->GetBinContent(hRtio->FindBin(pt.fX,pt.fY)) << endl;
   return hRtio->GetBinContent(hRtio->FindBin(pt.fX,pt.fY));
 }
 
 void LikeliHOOD::GETCUM() // cum for cumulative
 {
+  cout << "GETCUM" << endl;
   TH1F* h = new TH1F("h","",1000,0,10.);
   for (auto& pt : fTTbar){
     h->Fill(GetLikeLiHood(pt));
@@ -257,7 +275,8 @@ void LikeliHOOD::GETCUM() // cum for cumulative
   TCanvas* c = new TCanvas();
   h->Scale( 1 / h->Integral());
   h->GetCumulative()->Draw();
-  int nq(nLep_==3 ? 5 : 8);
+  // int nq(nLep_==3 ? 5 : 8);
+  int nq(10);
   Double_t xq[nq+1]; Double_t yq[nq+1];
   for (Int_t i=0;i<nq;i++) xq[i] = Float_t(i)/nq;
   xq[nq] = 0.99999;
@@ -271,12 +290,12 @@ void LikeliHOOD::GETCUM() // cum for cumulative
   // hAuxHisto->Draw();
 
   c->Print(Form("cumulative_%s.pdf", (nLep_==3 ? "3l" : "2lss")));
-  c->Print(Form("cumulative_%s.png", (nLep_==3 ? "3l" : "2lss")));
+  // c->Print(Form("cumulative_%s.png", (nLep_==3 ? "3l" : "2lss")));
   
 
-  TFile* cumulativeStore = TFile::Open(Form("cumulative_%dl.root",nLep_),"recreate");
-  h->GetCumulative()->Write();
-  cumulativeStore->Close();
+  // TFile* cumulativeStore = TFile::Open(Form("cumulative_%s.root",(nLep_==3 ? "3l" : "2lss")),"recreate");
+  // h->GetCumulative()->Write();
+  // cumulativeStore->Close();
 
   return; 
 }
@@ -304,11 +323,14 @@ void LikeliHOOD::Test()
   vector<Point>::iterator point;
   cout << "TTbar size is " << fTTbarMC.size() << endl;
   for (point = fTTbarMC.begin(); point != fTTbarMC.end(); ++point)
-    hTTbar->Fill( GetCluster( *point), 36500*point->fW);
+    hTTbar->Fill( GetCluster( *point), point->fW);
+    // hTTbar->Fill( GetCluster( *point), 36500*point->fW);
   for (point = fTTWMC.begin(); point != fTTWMC.end(); ++point)
-    hTTW->Fill( GetCluster( *point), 36500*point->fW);
+    hTTW->Fill( GetCluster( *point), point->fW);
+    // hTTW->Fill( GetCluster( *point), 36500*point->fW);
   for (point = fTTHMC.begin(); point != fTTHMC.end(); ++point)
-    hTTH->Fill( GetCluster( *point), 36500*point->fW);
+    hTTH->Fill( GetCluster( *point), point->fW);
+    // hTTH->Fill( GetCluster( *point), 36500*point->fW);
   cout << hTTbar->Integral() << " " << hTTbar->GetEntries() << endl;
   hTTbar->SetFillColor( kRed     );
   hTTH->SetFillColor( kBlue    );
@@ -325,7 +347,7 @@ void LikeliHOOD::Test()
   mc->GetHistogram()->GetYaxis()->SetTitleOffset(1.1);
 
   TLegend* l = new TLegend(0.7,0.8,0.9,0.9);
-  l->AddEntry(hTTH  , "ttH signal", "f");
+  l->AddEntry(hTTH  , "tHq signal", "f");
   l->AddEntry(hTTW  , "ttV"       , "f");
   l->AddEntry(hTTbar, "tt"        , "f");
   l->Draw();
@@ -341,7 +363,7 @@ void LikeliHOOD::Test()
   c->Update();
 
   c->Print(Form("likelihoodBased_1d_%s.pdf", (nLep_==3 ? "3l" : "2lss")));
-  c->Print(Form("likelihoodBased_1d_%s.png", (nLep_==3 ? "3l" : "2lss")));
+  // c->Print(Form("likelihoodBased_1d_%s.png", (nLep_==3 ? "3l" : "2lss")));
 }
 
 Int_t LikeliHOOD::SortedThing(Int_t bin)
@@ -355,6 +377,7 @@ Int_t LikeliHOOD::SortedThing(Int_t bin)
 
 void LikeliHOOD::StoreToFile()
 {
+  cout << "Storing to file" << endl;
   TFile* binning = TFile::Open(Form("binning_%dl.root",nLep_),"recreate");
   hTargetBinning = new TH2F("hTargetBinning","",100,-1.,1.,100,-1.,1.);
   for (int ix = 1; ix < hTargetBinning->GetXaxis()->GetNbins()  +1; ++ix){
@@ -362,11 +385,16 @@ void LikeliHOOD::StoreToFile()
       int bin = hTargetBinning->GetBin(ix,iy);
       int k   = GetCluster( Point(hTargetBinning->GetXaxis()->GetBinCenter(ix),
 				  hTargetBinning->GetYaxis()->GetBinCenter(iy),-1));
-      cout << hTargetBinning->GetXaxis()->GetBinCenter(ix) << " "
-	   << hTargetBinning->GetYaxis()->GetBinCenter(iy) << k << endl;
+    //   cout << hTargetBinning->GetXaxis()->GetBinCenter(ix) << " "
+	   // << hTargetBinning->GetYaxis()->GetBinCenter(iy) << k << endl;
       hTargetBinning->SetBinContent(bin,k);
     }
   }
+
+  TCanvas* c = new TCanvas();
+  hTargetBinning->Draw("colz");
+  c->SaveAs(Form("hTargetBinning_%s.pdf", (nLep_==3 ? "3l" : "2lss")));
+
   hTargetBinning->Write();
   binning->Close();
 }
@@ -380,7 +408,7 @@ void LikeliHOOD::VoronoiPlot()
   for (Double_t x = -1; x < 1.; x = x + 1e-3){
       for (Double_t y = -1; y < 1.; y = y + 1e-3){
 	Int_t k = GetCluster(Point(x,y,-1));
-	cout << k << endl;
+	// cout << k << endl;
 	X[k].push_back(x);
 	Y[k].push_back(y);
 	// cout << "Pushed " << endl;

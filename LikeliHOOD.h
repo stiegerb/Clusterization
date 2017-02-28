@@ -20,7 +20,7 @@ class Point
 class LikeliHOOD
 {
  public:
-  LikeliHOOD( Int_t nLep=2, TString fileType="txt", Int_t trial=0) ;
+  LikeliHOOD( Int_t nLep=2, TString fileType="root", Int_t trial=0) ;
   ~LikeliHOOD() {}
   // void VoronoiPlot();
   //  void Test();
